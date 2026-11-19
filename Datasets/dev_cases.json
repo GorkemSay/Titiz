@@ -1,0 +1,836 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetName": "Titiz Dev & Regression Suite",
+  "description": "Curated development cases across character, spelling, and combined modes prioritizing precision and entity retention.",
+  "cases": [
+    {
+      "id": "char-clean-01",
+      "mode": "character",
+      "category": "clean",
+      "isCleanSentence": true,
+      "input": "Bugün dışarı çıkacağım için şemsiyemi yanıma aldım.",
+      "expected": "Bugün dışarı çıkacağım için şemsiyemi yanıma aldım.",
+      "expectedEdits": [],
+      "notes": "Already-valid Turkish sentence must remain untouched."
+    },
+    {
+      "id": "char-clean-02",
+      "mode": "character",
+      "category": "clean",
+      "isCleanSentence": true,
+      "input": "İstanbul'da yağmur yağıyor ama hava çok güzel.",
+      "expected": "İstanbul'da yağmur yağıyor ama hava çok güzel.",
+      "expectedEdits": [],
+      "protectedSpans": [
+        { "text": "İstanbul'da", "tier": "tier2A" }
+      ],
+      "notes": "Proper noun with apostrophe suffix and diacritics must remain untouched."
+    },
+    {
+      "id": "char-ascii-01",
+      "mode": "character",
+      "category": "ascii_turkish",
+      "isCleanSentence": false,
+      "input": "yarin disari cikacagim",
+      "expected": "yarın dışarı çıkacağım",
+      "expectedEdits": [
+        { "original": "yarin", "expected": "yarın", "bucket": "bucket2", "origin": "character" },
+        { "original": "disari", "expected": "dışarı", "bucket": "bucket1", "origin": "character" },
+        { "original": "cikacagim", "expected": "çıkacağım", "bucket": "bucket1", "origin": "character" }
+      ],
+      "notes": "Core ASCII restoration case from SPEC.md."
+    },
+    {
+      "id": "char-ascii-02",
+      "mode": "character",
+      "category": "ascii_turkish",
+      "isCleanSentence": false,
+      "input": "cocuklar bahcede yagmur altinda oynadi",
+      "expected": "çocuklar bahçede yağmur altında oynadı",
+      "expectedEdits": [
+        { "original": "cocuklar", "expected": "çocuklar", "bucket": "bucket1", "origin": "character" },
+        { "original": "bahcede", "expected": "bahçede", "bucket": "bucket1", "origin": "character" },
+        { "original": "yagmur", "expected": "yağmur", "bucket": "bucket1", "origin": "character" },
+        { "original": "altinda", "expected": "altında", "bucket": "bucket1", "origin": "character" },
+        { "original": "oynadi", "expected": "oynadı", "bucket": "bucket1", "origin": "character" }
+      ]
+    },
+    {
+      "id": "char-ascii-03",
+      "mode": "character",
+      "category": "ascii_turkish",
+      "isCleanSentence": false,
+      "input": "ogrenci yeni sehir kutuphanesinde turkce calismak istiyor",
+      "expected": "öğrenci yeni şehir kütüphanesinde türkçe çalışmak istiyor",
+      "expectedEdits": [
+        { "original": "ogrenci", "expected": "öğrenci", "bucket": "bucket1", "origin": "character" },
+        { "original": "sehir", "expected": "şehir", "bucket": "bucket1", "origin": "character" },
+        { "original": "kutuphanesinde", "expected": "kütüphanesinde", "bucket": "bucket1", "origin": "character" },
+        { "original": "turkce", "expected": "türkçe", "bucket": "bucket1", "origin": "character" },
+        { "original": "calismak", "expected": "çalışmak", "bucket": "bucket1", "origin": "character" }
+      ]
+    },
+    {
+      "id": "char-ascii-04",
+      "mode": "character",
+      "category": "ascii_turkish",
+      "isCleanSentence": false,
+      "input": "guncellemesi sonrasi hatalari topladik ama cozum cikmadi",
+      "expected": "güncellemesi sonrası hataları topladık ama çözüm çıkmadı",
+      "expectedEdits": [
+        { "original": "guncellemesi", "expected": "güncellemesi", "bucket": "bucket1", "origin": "character" },
+        { "original": "sonrasi", "expected": "sonrası", "bucket": "bucket1", "origin": "character" },
+        { "original": "hatalari", "expected": "hataları", "bucket": "bucket1", "origin": "character" },
+        { "original": "topladik", "expected": "topladık", "bucket": "bucket1", "origin": "character" },
+        { "original": "cozum", "expected": "çözüm", "bucket": "bucket1", "origin": "character" },
+        { "original": "cikmadi", "expected": "çıkmadı", "bucket": "bucket1", "origin": "character" }
+      ]
+    },
+    {
+      "id": "char-ascii-05",
+      "mode": "character",
+      "category": "ascii_turkish",
+      "isCleanSentence": false,
+      "input": "aksam gorusuruz tesekkurler",
+      "expected": "akşam görüşürüz teşekkürler",
+      "expectedEdits": [
+        { "original": "aksam", "expected": "akşam", "bucket": "bucket2", "origin": "character" },
+        { "original": "gorusuruz", "expected": "görüşürüz", "bucket": "bucket1", "origin": "character" },
+        { "original": "tesekkurler", "expected": "teşekkürler", "bucket": "bucket1", "origin": "character" }
+      ]
+    },
+    {
+      "id": "char-ascii-06",
+      "mode": "character",
+      "category": "ascii_turkish",
+      "isCleanSentence": false,
+      "input": "ozel bir hazirlik icin duzenli calisiyor",
+      "expected": "özel bir hazırlık için düzenli çalışıyor",
+      "expectedEdits": [
+        { "original": "ozel", "expected": "özel", "bucket": "bucket1", "origin": "character" },
+        { "original": "hazirlik", "expected": "hazırlık", "bucket": "bucket1", "origin": "character" },
+        { "original": "icin", "expected": "için", "bucket": "bucket1", "origin": "character" },
+        { "original": "duzenli", "expected": "düzenli", "bucket": "bucket1", "origin": "character" },
+        { "original": "calisiyor", "expected": "çalışıyor", "bucket": "bucket1", "origin": "character" }
+      ]
+    },
+    {
+      "id": "char-mixed-01",
+      "mode": "character",
+      "category": "mixed_diacritics",
+      "isCleanSentence": false,
+      "input": "Bugün dışarı çıkacagim icin cok mutluyum.",
+      "expected": "Bugün dışarı çıkacağım için çok mutluyum.",
+      "expectedEdits": [
+        { "original": "çıkacagim", "expected": "çıkacağım", "bucket": "bucket1", "origin": "character" },
+        { "original": "icin", "expected": "için", "bucket": "bucket1", "origin": "character" },
+        { "original": "cok", "expected": "çok", "bucket": "bucket1", "origin": "character" }
+      ],
+      "notes": "One-way guarantee: existing ç and ı in çıkacagim stay intact while g->ğ and i->ı are restored."
+    },
+    {
+      "id": "char-mixed-02",
+      "mode": "character",
+      "category": "mixed_diacritics",
+      "isCleanSentence": false,
+      "input": "Öğretmenimiz ödevlerin yarın teslim edilmesini soyledi.",
+      "expected": "Öğretmenimiz ödevlerin yarın teslim edilmesini söyledi.",
+      "expectedEdits": [
+        { "original": "soyledi", "expected": "söyledi", "bucket": "bucket1", "origin": "character" }
+      ]
+    },
+    {
+      "id": "char-scope-01",
+      "mode": "character",
+      "category": "out_of_scope_guard",
+      "isCleanSentence": false,
+      "input": "yarin disari cikacagim ?",
+      "expected": "yarın dışarı çıkacağım ?",
+      "expectedEdits": [
+        { "original": "yarin", "expected": "yarın", "bucket": "bucket2", "origin": "character" },
+        { "original": "disari", "expected": "dışarı", "bucket": "bucket1", "origin": "character" },
+        { "original": "cikacagim", "expected": "çıkacağım", "bucket": "bucket1", "origin": "character" }
+      ],
+      "notes": "Character mode must not capitalize sentence start or remove space before '?'."
+    },
+    {
+      "id": "char-codeswitch-01",
+      "mode": "character",
+      "category": "code_switched",
+      "isCleanSentence": false,
+      "input": "Yeni driver guncellemesi ve feedback dosyasi icin tesekkurler.",
+      "expected": "Yeni driver güncellemesi ve feedback dosyası için teşekkürler.",
+      "expectedEdits": [
+        { "original": "guncellemesi", "expected": "güncellemesi", "bucket": "bucket1", "origin": "character" },
+        { "original": "dosyasi", "expected": "dosyası", "bucket": "bucket1", "origin": "character" },
+        { "original": "icin", "expected": "için", "bucket": "bucket1", "origin": "character" },
+        { "original": "tesekkurler", "expected": "teşekkürler", "bucket": "bucket1", "origin": "character" }
+      ],
+      "protectedSpans": [
+        { "text": "driver", "tier": "foreign_term" },
+        { "text": "feedback", "tier": "foreign_term" }
+      ]
+    },
+    {
+      "id": "char-codeswitch-02",
+      "mode": "character",
+      "category": "code_switched",
+      "isCleanSentence": true,
+      "input": "Sunucu loglarini \"Search\" ekranında inceledim.",
+      "expected": "Sunucu loglarini \"Search\" ekranında inceledim.",
+      "expectedEdits": [],
+      "protectedSpans": [
+        { "text": "loglarini", "tier": "foreign_term" },
+        { "text": "Search", "tier": "tier0" }
+      ],
+      "notes": "Foreign stem + Turkish suffix untouched and quoted UI label protected."
+    },
+    {
+      "id": "char-codeswitch-03",
+      "mode": "character",
+      "category": "structural_tier0",
+      "isCleanSentence": false,
+      "input": "Detaylar icin https://tdk.gov.tr ve gorkemsay@protonmail.com uzerinden yazabilirsiniz.",
+      "expected": "Detaylar için https://tdk.gov.tr ve gorkemsay@protonmail.com üzerinden yazabilirsiniz.",
+      "expectedEdits": [
+        { "original": "icin", "expected": "için", "bucket": "bucket1", "origin": "character" },
+        { "original": "uzerinden", "expected": "üzerinden", "bucket": "bucket1", "origin": "character" }
+      ],
+      "protectedSpans": [
+        { "text": "https://tdk.gov.tr", "tier": "tier0" },
+        { "text": "gorkemsay@protonmail.com", "tier": "tier0" }
+      ]
+    },
+    {
+      "id": "char-minimal-01",
+      "mode": "character",
+      "category": "minimal_pairs",
+      "isCleanSentence": false,
+      "input": "Bu is yarin aksam bitecek.",
+      "expected": "Bu iş yarın akşam bitecek.",
+      "expectedEdits": [
+        { "original": "is", "expected": "iş", "bucket": "bucket2", "origin": "character" },
+        { "original": "yarin", "expected": "yarın", "bucket": "bucket2", "origin": "character" },
+        { "original": "aksam", "expected": "akşam", "bucket": "bucket2", "origin": "character" }
+      ],
+      "notes": "High-skew Bucket 2 disambiguation (is->iş, yarin->yarın)."
+    },
+    {
+      "id": "char-minimal-02",
+      "mode": "character",
+      "category": "minimal_pairs",
+      "isCleanSentence": false,
+      "input": "Sabah erkenden ise gittim.",
+      "expected": "Sabah erkenden işe gittim.",
+      "expectedEdits": [
+        { "original": "ise", "expected": "işe", "bucket": "bucket2", "origin": "character" }
+      ],
+      "notes": "Bigram collocation disambiguates ise -> işe."
+    },
+    {
+      "id": "char-minimal-03",
+      "mode": "character",
+      "category": "minimal_pairs",
+      "isCleanSentence": true,
+      "input": "Hava güzel ise çıkarız.",
+      "expected": "Hava güzel ise çıkarız.",
+      "expectedEdits": [],
+      "notes": "Valid conditional particle 'ise' must NEVER become 'işe'."
+    },
+    {
+      "id": "char-minimal-04",
+      "mode": "character",
+      "category": "minimal_pairs",
+      "isCleanSentence": true,
+      "input": "Fişi prize sok.",
+      "expected": "Fişi prize sok.",
+      "expectedEdits": [],
+      "notes": "Valid 'sok' must not become 'şok'."
+    },
+    {
+      "id": "char-minimal-05",
+      "mode": "character",
+      "category": "minimal_pairs",
+      "isCleanSentence": true,
+      "input": "Son karar bu.",
+      "expected": "Son karar bu.",
+      "expectedEdits": [],
+      "notes": "Sentence-initial 'Son' (collides with English/Tier2B) must stay 'Son'."
+    },
+    {
+      "id": "char-minimal-06",
+      "mode": "character",
+      "category": "colliding_entities",
+      "isCleanSentence": true,
+      "input": "Can'a ve Apple'da çalışan ekibe selam söyledim.",
+      "expected": "Can'a ve Apple'da çalışan ekibe selam söyledim.",
+      "expectedEdits": [],
+      "protectedSpans": [
+        { "text": "Can'a", "tier": "tier2B" },
+        { "text": "Apple'da", "tier": "tier2B" }
+      ]
+    },
+    {
+      "id": "spell-clean-01",
+      "mode": "spelling",
+      "category": "clean",
+      "isCleanSentence": true,
+      "input": "Ekonomi ve resmi yazışmalarda samimi ama ilmi bir dil kullanıldı.",
+      "expected": "Ekonomi ve resmi yazışmalarda samimi ama ilmi bir dil kullanıldı.",
+      "expectedEdits": [],
+      "notes": "Valid dictionary words ending in -mi must NEVER be split."
+    },
+    {
+      "id": "spell-clean-02",
+      "mode": "spelling",
+      "category": "clean",
+      "isCleanSentence": true,
+      "input": "Kimi zaman yirmi acemi öğrenci daimi olarak aynı salonda çalışır.",
+      "expected": "Kimi zaman yirmi acemi öğrenci daimi olarak aynı salonda çalışır.",
+      "expectedEdits": [],
+      "notes": "Protects kimi, yirmi, acemi, daimi from question-particle splitting."
+    },
+    {
+      "id": "spell-clean-03",
+      "mode": "spelling",
+      "category": "out_of_scope_guard",
+      "isCleanSentence": true,
+      "input": "Sen de gel ki kar yağışını görelim; Gönder.",
+      "expected": "Sen de gel ki kar yağışını görelim; Gönder.",
+      "expectedEdits": [],
+      "notes": "v1 out-of-scope guards: de/da, ki, kar/kâr, and no stylistic rewrites on 'Gönder'."
+    },
+    {
+      "id": "spell-clean-04",
+      "mode": "spelling",
+      "category": "out_of_scope_guard",
+      "isCleanSentence": true,
+      "input": "Dr. Can saat 14:30'da https://tdk.gov.tr adresinde 3.14 oranını paylaştı.",
+      "expected": "Dr. Can saat 14:30'da https://tdk.gov.tr adresinde 3.14 oranını paylaştı.",
+      "expectedEdits": [],
+      "protectedSpans": [
+        { "text": "https://tdk.gov.tr", "tier": "tier0" },
+        { "text": "3.14", "tier": "tier0" },
+        { "text": "14:30'da", "tier": "tier0" }
+      ],
+      "notes": "URLs, decimals, times, and abbreviations must not get extra spacing after dots/colons."
+    },
+    {
+      "id": "spell-punct-01",
+      "mode": "spelling",
+      "category": "punctuation_spacing",
+      "isCleanSentence": false,
+      "input": "Bugün toplantı var mı ?",
+      "expected": "Bugün toplantı var mı?",
+      "expectedEdits": [
+        { "original": " ?", "expected": "?", "bucket": "spelling", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "spell-punct-02",
+      "mode": "spelling",
+      "category": "punctuation_spacing",
+      "isCleanSentence": false,
+      "input": "Merhaba ,dünya!Harika bir gün ;hemen başlayalım :",
+      "expected": "Merhaba, dünya! Harika bir gün; hemen başlayalım:",
+      "expectedEdits": [
+        { "original": " ,", "expected": ",", "bucket": "spelling", "origin": "spelling" },
+        { "original": ",dünya", "expected": ", dünya", "bucket": "spelling", "origin": "spelling" },
+        { "original": "!Harika", "expected": "! Harika", "bucket": "spelling", "origin": "spelling" },
+        { "original": " ;", "expected": ";", "bucket": "spelling", "origin": "spelling" },
+        { "original": ";hemen", "expected": "; hemen", "bucket": "spelling", "origin": "spelling" },
+        { "original": " :", "expected": ":", "bucket": "spelling", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "spell-punct-03",
+      "mode": "spelling",
+      "category": "punctuation_spacing",
+      "isCleanSentence": false,
+      "input": "Dikkat et !Dosya hazır ,ama kontrol et .",
+      "expected": "Dikkat et! Dosya hazır, ama kontrol et.",
+      "expectedEdits": [
+        { "original": " !", "expected": "!", "bucket": "spelling", "origin": "spelling" },
+        { "original": "!Dosya", "expected": "! Dosya", "bucket": "spelling", "origin": "spelling" },
+        { "original": " ,", "expected": ",", "bucket": "spelling", "origin": "spelling" },
+        { "original": ",ama", "expected": ", ama", "bucket": "spelling", "origin": "spelling" },
+        { "original": " .", "expected": ".", "bucket": "spelling", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "spell-cap-01",
+      "mode": "spelling",
+      "category": "capitalization",
+      "isCleanSentence": false,
+      "input": "istanbul çok güzel. ırmak kenarında yürüdük.",
+      "expected": "İstanbul çok güzel. Irmak kenarında yürüdük.",
+      "expectedEdits": [
+        { "original": "istanbul", "expected": "İstanbul", "bucket": "spelling", "origin": "spelling" },
+        { "original": "ırmak", "expected": "Irmak", "bucket": "spelling", "origin": "spelling" }
+      ],
+      "notes": "Turkish locale sentence-start capitalization (i->İ, ı->I)."
+    },
+    {
+      "id": "spell-cap-02",
+      "mode": "spelling",
+      "category": "colliding_entities",
+      "isCleanSentence": false,
+      "input": "Intel yeni işlemci tanıttı. ikinci toplantı yarın.",
+      "expected": "Intel yeni işlemci tanıttı. İkinci toplantı yarın.",
+      "expectedEdits": [
+        { "original": "ikinci", "expected": "İkinci", "bucket": "spelling", "origin": "spelling" }
+      ],
+      "protectedSpans": [
+        { "text": "Intel", "tier": "tier2A" }
+      ],
+      "notes": "Intel stays Intel at sentence start while ordinary Turkish 'ikinci' capitalizes to 'İkinci'."
+    },
+    {
+      "id": "spell-q-01",
+      "mode": "spelling",
+      "category": "question_particle",
+      "isCleanSentence": false,
+      "input": "Bugün toplantı varmı?",
+      "expected": "Bugün toplantı var mı?",
+      "expectedEdits": [
+        { "original": "varmı", "expected": "var mı", "bucket": "spelling", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "spell-q-02",
+      "mode": "spelling",
+      "category": "question_particle",
+      "isCleanSentence": false,
+      "input": "Yarın bizimle geliyormusun?",
+      "expected": "Yarın bizimle geliyor musun?",
+      "expectedEdits": [
+        { "original": "geliyormusun", "expected": "geliyor musun", "bucket": "spelling", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "spell-q-03",
+      "mode": "spelling",
+      "category": "question_particle",
+      "isCleanSentence": false,
+      "input": "Haberi duydunmu ve hazır mısın?",
+      "expected": "Haberi duydun mu ve hazır mısın?",
+      "expectedEdits": [
+        { "original": "duydunmu", "expected": "duydun mu", "bucket": "spelling", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "spell-q-04",
+      "mode": "spelling",
+      "category": "question_particle",
+      "isCleanSentence": false,
+      "input": "Biraz daha bekleyelimmi yoksa gidelim mi?",
+      "expected": "Biraz daha bekleyelim mi yoksa gidelim mi?",
+      "expectedEdits": [
+        { "original": "bekleyelimmi", "expected": "bekleyelim mi", "bucket": "spelling", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "spell-q-05",
+      "mode": "spelling",
+      "category": "question_particle",
+      "isCleanSentence": false,
+      "input": "Film güzelmiydi ve siz hazırmısınız?",
+      "expected": "Film güzel miydi ve siz hazır mısınız?",
+      "expectedEdits": [
+        { "original": "güzelmiydi", "expected": "güzel miydi", "bucket": "spelling", "origin": "spelling" },
+        { "original": "hazırmısınız", "expected": "hazır mısınız", "bucket": "spelling", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "spell-q-06",
+      "mode": "spelling",
+      "category": "question_particle",
+      "isCleanSentence": false,
+      "input": "Bugün dışarı çıkacakmıyız ve akşam buluşuyormuyuz?",
+      "expected": "Bugün dışarı çıkacak mıyız ve akşam buluşuyor muyuz?",
+      "expectedEdits": [
+        { "original": "çıkacakmıyız", "expected": "çıkacak mıyız", "bucket": "spelling", "origin": "spelling" },
+        { "original": "buluşuyormuyuz", "expected": "buluşuyor muyuz", "bucket": "spelling", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "spell-tdk-01",
+      "mode": "spelling",
+      "category": "closed_tdk",
+      "isCleanSentence": false,
+      "input": "Bence herşey yolunda ve birşey eksik değil, hiçbirşey gizli kalmaz.",
+      "expected": "Bence her şey yolunda ve bir şey eksik değil, hiçbir şey gizli kalmaz.",
+      "expectedEdits": [
+        { "original": "herşey", "expected": "her şey", "bucket": "spelling", "origin": "spelling" },
+        { "original": "birşey", "expected": "bir şey", "bucket": "spelling", "origin": "spelling" },
+        { "original": "hiçbirşey", "expected": "hiçbir şey", "bucket": "spelling", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "spell-tdk-02",
+      "mode": "spelling",
+      "category": "closed_tdk",
+      "isCleanSentence": false,
+      "input": "Toplantıya herkez katıldı ama yanlız sen yalnış bilgi verdin.",
+      "expected": "Toplantıya herkes katıldı ama yalnız sen yanlış bilgi verdin.",
+      "expectedEdits": [
+        { "original": "herkez", "expected": "herkes", "bucket": "spelling", "origin": "spelling" },
+        { "original": "yanlız", "expected": "yalnız", "bucket": "spelling", "origin": "spelling" },
+        { "original": "yalnış", "expected": "yanlış", "bucket": "spelling", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "spell-tdk-03",
+      "mode": "spelling",
+      "category": "closed_tdk",
+      "isCleanSentence": false,
+      "input": "Yardımın için sağol, şimdilik hoşçakal.",
+      "expected": "Yardımın için sağ ol, şimdilik hoşça kal.",
+      "expectedEdits": [
+        { "original": "sağol", "expected": "sağ ol", "bucket": "spelling", "origin": "spelling" },
+        { "original": "hoşçakal", "expected": "hoşça kal", "bucket": "spelling", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "spell-tdk-04",
+      "mode": "spelling",
+      "category": "closed_tdk",
+      "isCleanSentence": false,
+      "input": "İki hata ardarda geldi.",
+      "expected": "İki hata art arda geldi.",
+      "expectedEdits": [
+        { "original": "ardarda", "expected": "art arda", "bucket": "spelling", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "spell-tdk-05",
+      "mode": "spelling",
+      "category": "closed_tdk",
+      "isCleanSentence": false,
+      "input": "Bugün toplantı varmı ?",
+      "expected": "Bugün toplantı var mı?",
+      "expectedEdits": [
+        { "original": "varmı ?", "expected": "var mı?", "bucket": "spelling", "origin": "spelling" }
+      ],
+      "notes": "Canonical SPEC.md spelling-mode example combining particle split and space removal."
+    },
+    {
+      "id": "comb-canonical-01",
+      "mode": "combined",
+      "category": "fused_clitics",
+      "isCleanSentence": false,
+      "input": "Intel ekibinden MaviKutu icin cevap geldimi?",
+      "expected": "Intel ekibinden MaviKutu için cevap geldi mi?",
+      "personalDictionary": ["MaviKutu"],
+      "expectedEdits": [
+        { "original": "icin", "expected": "için", "bucket": "bucket1", "origin": "character" },
+        { "original": "geldimi", "expected": "geldi mi", "bucket": "spelling", "origin": "spelling" }
+      ],
+      "protectedSpans": [
+        { "text": "Intel", "tier": "tier2A" },
+        { "text": "MaviKutu", "tier": "tier1" }
+      ],
+      "notes": "Target canonical example from SPEC.md Section 2."
+    },
+    {
+      "id": "comb-clean-01",
+      "mode": "combined",
+      "category": "clean",
+      "isCleanSentence": true,
+      "input": "Nvidia ve Spotify entegrasyonu için Visual Studio Code üzerinde test yazdık.",
+      "expected": "Nvidia ve Spotify entegrasyonu için Visual Studio Code üzerinde test yazdık.",
+      "expectedEdits": [],
+      "protectedSpans": [
+        { "text": "Nvidia", "tier": "tier2A" },
+        { "text": "Spotify", "tier": "tier2A" },
+        { "text": "Visual Studio Code", "tier": "tier3" }
+      ]
+    },
+    {
+      "id": "comb-clean-02",
+      "mode": "combined",
+      "category": "clean",
+      "isCleanSentence": true,
+      "input": "Apple'da çalışan ekip iPhone'u ve GitHub'ta bulunan `swift test` betiğini kontrol etti.",
+      "expected": "Apple'da çalışan ekip iPhone'u ve GitHub'ta bulunan `swift test` betiğini kontrol etti.",
+      "expectedEdits": [],
+      "protectedSpans": [
+        { "text": "Apple'da", "tier": "foreign_term" },
+        { "text": "iPhone'u", "tier": "foreign_term" },
+        { "text": "GitHub'ta", "tier": "foreign_term" },
+        { "text": "`swift test`", "tier": "tier0" }
+      ],
+      "notes": "Foreign-stem apostrophe suffix guard must never rewrite vowel harmony on Apple'da, iPhone'u, GitHub'ta."
+    },
+    {
+      "id": "comb-joint-01",
+      "mode": "combined",
+      "category": "fused_clitics",
+      "isCleanSentence": false,
+      "input": "Disari ciktimi ?",
+      "expected": "Dışarı çıktı mı?",
+      "expectedEdits": [
+        { "original": "Disari", "expected": "Dışarı", "bucket": "bucket1", "origin": "character" },
+        { "original": "ciktimi ?", "expected": "çıktı mı?", "bucket": "spelling_joint", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "comb-joint-02",
+      "mode": "combined",
+      "category": "fused_clitics",
+      "isCleanSentence": false,
+      "input": "yarin toplantida yeni gelisme varmi?",
+      "expected": "Yarın toplantıda yeni gelişme var mı?",
+      "expectedEdits": [
+        { "original": "yarin", "expected": "Yarın", "bucket": "bucket2", "origin": "character" },
+        { "original": "toplantida", "expected": "toplantıda", "bucket": "bucket1", "origin": "character" },
+        { "original": "gelisme", "expected": "gelişme", "bucket": "bucket1", "origin": "character" },
+        { "original": "varmi", "expected": "var mı", "bucket": "spelling_joint", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "comb-joint-03",
+      "mode": "combined",
+      "category": "fused_clitics",
+      "isCleanSentence": false,
+      "input": "Dun aksam yeni filmi gordunmu?",
+      "expected": "Dün akşam yeni filmi gördün mü?",
+      "expectedEdits": [
+        { "original": "Dun", "expected": "Dün", "bucket": "bucket2", "origin": "character" },
+        { "original": "aksam", "expected": "akşam", "bucket": "bucket2", "origin": "character" },
+        { "original": "gordunmu", "expected": "gördün mü", "bucket": "spelling_joint", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "comb-joint-04",
+      "mode": "combined",
+      "category": "fused_clitics",
+      "isCleanSentence": false,
+      "input": "Guncelleme sorunsuz olmusmu?",
+      "expected": "Güncelleme sorunsuz olmuş mu?",
+      "expectedEdits": [
+        { "original": "Guncelleme", "expected": "Güncelleme", "bucket": "bucket1", "origin": "character" },
+        { "original": "olmusmu", "expected": "olmuş mu", "bucket": "spelling_joint", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "comb-joint-05",
+      "mode": "combined",
+      "category": "fused_clitics",
+      "isCleanSentence": false,
+      "input": "Bence hersey hazir ama birsey daha var.",
+      "expected": "Bence her şey hazır ama bir şey daha var.",
+      "expectedEdits": [
+        { "original": "hersey", "expected": "her şey", "bucket": "spelling_joint", "origin": "spelling" },
+        { "original": "hazir", "expected": "hazır", "bucket": "bucket2", "origin": "character" },
+        { "original": "birsey", "expected": "bir şey", "bucket": "spelling_joint", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "comb-joint-06",
+      "mode": "combined",
+      "category": "fused_clitics",
+      "isCleanSentence": false,
+      "input": "Bugun disari cikacakmisin?",
+      "expected": "Bugün dışarı çıkacak mısın?",
+      "expectedEdits": [
+        { "original": "Bugun", "expected": "Bugün", "bucket": "bucket1", "origin": "character" },
+        { "original": "disari", "expected": "dışarı", "bucket": "bucket1", "origin": "character" },
+        { "original": "cikacakmisin", "expected": "çıkacak mısın", "bucket": "spelling_joint", "origin": "spelling" }
+      ]
+    },
+    {
+      "id": "comb-entity-01",
+      "mode": "combined",
+      "category": "personal_dictionary",
+      "isCleanSentence": false,
+      "input": "Yeni Proje X ve bulutkutu icin guncelleme hazir.",
+      "expected": "Yeni Proje X ve bulutkutu için güncelleme hazır.",
+      "personalDictionary": ["Yeni Proje X", "bulutkutu"],
+      "expectedEdits": [
+        { "original": "icin", "expected": "için", "bucket": "bucket1", "origin": "character" },
+        { "original": "guncelleme", "expected": "güncelleme", "bucket": "bucket1", "origin": "character" },
+        { "original": "hazir", "expected": "hazır", "bucket": "bucket2", "origin": "character" }
+      ],
+      "protectedSpans": [
+        { "text": "Yeni Proje X", "tier": "tier1" },
+        { "text": "bulutkutu", "tier": "tier1" }
+      ],
+      "notes": "Tests multi-word and lowercase Tier 1 personal dictionary protection."
+    },
+    {
+      "id": "comb-entity-02",
+      "mode": "combined",
+      "category": "colliding_entities",
+      "isCleanSentence": false,
+      "input": "PlayStation uzerinde The Last of Us oynadim, cok guzeldi.",
+      "expected": "PlayStation üzerinde The Last of Us oynadım, çok güzeldi.",
+      "expectedEdits": [
+        { "original": "uzerinde", "expected": "üzerinde", "bucket": "bucket1", "origin": "character" },
+        { "original": "oynadim", "expected": "oynadım", "bucket": "bucket1", "origin": "character" },
+        { "original": "cok", "expected": "çok", "bucket": "bucket1", "origin": "character" },
+        { "original": "guzeldi", "expected": "güzeldi", "bucket": "bucket1", "origin": "character" }
+      ],
+      "protectedSpans": [
+        { "text": "PlayStation", "tier": "tier2A" },
+        { "text": "The Last of Us", "tier": "tier3" }
+      ]
+    },
+    {
+      "id": "comb-entity-03",
+      "mode": "combined",
+      "category": "colliding_entities",
+      "isCleanSentence": false,
+      "input": "Netflix icerigi ve Red Dead Redemption oyunu icin yorumlar olumlu.",
+      "expected": "Netflix içeriği ve Red Dead Redemption oyunu için yorumlar olumlu.",
+      "expectedEdits": [
+        { "original": "icerigi", "expected": "içeriği", "bucket": "bucket1", "origin": "character" },
+        { "original": "icin", "expected": "için", "bucket": "bucket1", "origin": "character" }
+      ],
+      "protectedSpans": [
+        { "text": "Netflix", "tier": "tier2A" },
+        { "text": "Red Dead Redemption", "tier": "tier3" }
+      ]
+    },
+    {
+      "id": "comb-entity-04",
+      "mode": "combined",
+      "category": "colliding_entities",
+      "isCleanSentence": false,
+      "input": "Can Bey ve Deniz ile Swift dilinde yeni arac gelistirdik.",
+      "expected": "Can Bey ve Deniz ile Swift dilinde yeni araç geliştirdik.",
+      "expectedEdits": [
+        { "original": "arac", "expected": "araç", "bucket": "bucket2", "origin": "character" },
+        { "original": "gelistirdik", "expected": "geliştirdik", "bucket": "bucket1", "origin": "character" }
+      ],
+      "protectedSpans": [
+        { "text": "Can", "tier": "tier2B" },
+        { "text": "Deniz", "tier": "tier2B" },
+        { "text": "Swift", "tier": "tier2B" }
+      ]
+    },
+    {
+      "id": "comb-tier0-01",
+      "mode": "combined",
+      "category": "structural_tier0",
+      "isCleanSentence": false,
+      "input": "TDK ve API belgelerini iOS ile macOS uzerinde MenuBarExtra icinde inceledik.",
+      "expected": "TDK ve API belgelerini iOS ile macOS üzerinde MenuBarExtra içinde inceledik.",
+      "expectedEdits": [
+        { "original": "uzerinde", "expected": "üzerinde", "bucket": "bucket1", "origin": "character" },
+        { "original": "icinde", "expected": "içinde", "bucket": "bucket1", "origin": "character" }
+      ],
+      "protectedSpans": [
+        { "text": "TDK", "tier": "tier0" },
+        { "text": "API", "tier": "tier0" },
+        { "text": "iOS", "tier": "tier0" },
+        { "text": "macOS", "tier": "tier0" },
+        { "text": "MenuBarExtra", "tier": "tier0" }
+      ]
+    },
+    {
+      "id": "comb-tier0-02",
+      "mode": "combined",
+      "category": "structural_tier0",
+      "isCleanSentence": false,
+      "input": "GPT-4 yanitini \"Search\" kutusuna yapistirip 'Gönder' dugmesine basin.",
+      "expected": "GPT-4 yanıtını \"Search\" kutusuna yapıştırıp 'Gönder' düğmesine basın.",
+      "expectedEdits": [
+        { "original": "yanitini", "expected": "yanıtını", "bucket": "bucket1", "origin": "character" },
+        { "original": "yapistirip", "expected": "yapıştırıp", "bucket": "bucket1", "origin": "character" },
+        { "original": "dugmesine", "expected": "düğmesine", "bucket": "bucket1", "origin": "character" },
+        { "original": "basin", "expected": "basın", "bucket": "bucket2", "origin": "character" }
+      ],
+      "protectedSpans": [
+        { "text": "GPT-4", "tier": "tier0" },
+        { "text": "Search", "tier": "tier0" },
+        { "text": "Gönder", "tier": "tier0" }
+      ]
+    },
+    {
+      "id": "comb-tier0-03",
+      "mode": "combined",
+      "category": "structural_tier0",
+      "isCleanSentence": false,
+      "input": "Sources/TitizCore/TitizEngine.swift ve ./scripts/bundle-app.sh dosyalarini @gorkemsay #Swift6 etiketiyle paylasti.",
+      "expected": "Sources/TitizCore/TitizEngine.swift ve ./scripts/bundle-app.sh dosyalarını @gorkemsay #Swift6 etiketiyle paylaştı.",
+      "expectedEdits": [
+        { "original": "dosyalarini", "expected": "dosyalarını", "bucket": "bucket1", "origin": "character" },
+        { "original": "paylasti", "expected": "paylaştı", "bucket": "bucket1", "origin": "character" }
+      ],
+      "protectedSpans": [
+        { "text": "Sources/TitizCore/TitizEngine.swift", "tier": "tier0" },
+        { "text": "./scripts/bundle-app.sh", "tier": "tier0" },
+        { "text": "@gorkemsay", "tier": "tier0" },
+        { "text": "#Swift6", "tier": "tier0" }
+      ]
+    },
+    {
+      "id": "comb-cap-01",
+      "mode": "combined",
+      "category": "capitalization",
+      "isCleanSentence": false,
+      "input": "istanbul'da yasayan arkadasim icin guzel bir hediye aldim.",
+      "expected": "İstanbul'da yaşayan arkadaşım için güzel bir hediye aldım.",
+      "expectedEdits": [
+        { "original": "istanbul'da", "expected": "İstanbul'da", "bucket": "spelling", "origin": "spelling" },
+        { "original": "yasayan", "expected": "yaşayan", "bucket": "bucket2", "origin": "character" },
+        { "original": "arkadasim", "expected": "arkadaşım", "bucket": "bucket1", "origin": "character" },
+        { "original": "icin", "expected": "için", "bucket": "bucket1", "origin": "character" },
+        { "original": "guzel", "expected": "güzel", "bucket": "bucket1", "origin": "character" },
+        { "original": "aldim", "expected": "aldım", "bucket": "bucket1", "origin": "character" }
+      ],
+      "notes": "Joint sentence-start capitalization + character restoration on İstanbul'da."
+    },
+    {
+      "id": "comb-punct-01",
+      "mode": "combined",
+      "category": "punctuation_spacing",
+      "isCleanSentence": false,
+      "input": "Yarin erken kalkacagim,cunku cok isim var .",
+      "expected": "Yarın erken kalkacağım, çünkü çok işim var.",
+      "expectedEdits": [
+        { "original": "Yarin", "expected": "Yarın", "bucket": "bucket2", "origin": "character" },
+        { "original": "kalkacagim", "expected": "kalkacağım", "bucket": "bucket1", "origin": "character" },
+        { "original": ",çünkü", "expected": ", çünkü", "bucket": "spelling", "origin": "spelling" },
+        { "original": "cunku", "expected": "çünkü", "bucket": "bucket1", "origin": "character" },
+        { "original": "cok", "expected": "çok", "bucket": "bucket1", "origin": "character" },
+        { "original": "isim", "expected": "işim", "bucket": "bucket2", "origin": "character" },
+        { "original": " .", "expected": ".", "bucket": "spelling", "origin": "spelling" }
+      ],
+      "notes": "Also checks 'isim' (name) vs 'işim' (my work) Bucket 2 context."
+    },
+    {
+      "id": "comb-codeswitch-01",
+      "mode": "combined",
+      "category": "code_switched",
+      "isCleanSentence": false,
+      "input": "Intel'den gelen driver ve SQL sorgusu icin herkez cok heyecanli.",
+      "expected": "Intel'den gelen driver ve SQL sorgusu için herkes çok heyecanlı.",
+      "expectedEdits": [
+        { "original": "icin", "expected": "için", "bucket": "bucket1", "origin": "character" },
+        { "original": "herkez", "expected": "herkes", "bucket": "spelling", "origin": "spelling" },
+        { "original": "cok", "expected": "çok", "bucket": "bucket1", "origin": "character" },
+        { "original": "heyecanli", "expected": "heyecanlı", "bucket": "bucket1", "origin": "character" }
+      ],
+      "protectedSpans": [
+        { "text": "Intel'den", "tier": "tier2A" },
+        { "text": "driver", "tier": "foreign_term" },
+        { "text": "SQL", "tier": "tier0" }
+      ]
+    },
+    {
+      "id": "comb-clean-03",
+      "mode": "combined",
+      "category": "clean",
+      "isCleanSentence": true,
+      "input": "Atatürk Havalimanı'ndan gelen misafirler için akşam saat 19:00'da yemek düzenlendi.",
+      "expected": "Atatürk Havalimanı'ndan gelen misafirler için akşam saat 19:00'da yemek düzenlendi.",
+      "expectedEdits": [],
+      "protectedSpans": [
+        { "text": "Atatürk", "tier": "tier2A" },
+        { "text": "19:00'da", "tier": "tier0" }
+      ]
+    }
+  ]
+}

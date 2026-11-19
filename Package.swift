@@ -52,7 +52,7 @@ let package = Package(
         ),
         .testTarget(
             name: "TitizCoreTests",
-            dependencies: ["TitizCore"],
+            dependencies: ["TitizCore", "TitizEval"],
             path: "Tests/TitizCoreTests"
         )
     ],

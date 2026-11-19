@@ -31,10 +31,10 @@
 - [x] Pass Phase 1 exit gate, update `Progress.md`, commit & push
 
 ### Phase 2 — Evaluation Harness (`TitizEval`) & Dataset Discipline
-- [ ] Build `TitizEval` CLI measuring False-Positive Corruption Rate, Protected Entity/Foreign Term Retention, True Error Recall, Edit Precision, and Latency p50/p95 (300-char & 2,000-char inputs)
-- [ ] Seed `Datasets/dev_cases.json` across all 3 modes
-- [ ] Create `Datasets/blind_cases.schema.json` and document held-out blind evaluation workflow
-- [ ] Pass Phase 2 exit gate (`swift run TitizEval` structured baseline report), update `Progress.md`, commit & push
+- [x] Build `TitizEval` CLI measuring False-Positive Corruption Rate, Protected Entity/Foreign Term Retention, True Error Recall, Edit Precision, and Latency p50/p95 (300-char & 2,000-char inputs)
+- [x] Seed `Datasets/dev_cases.json` across all 3 modes
+- [x] Create `Datasets/blind_cases.schema.json` and document held-out blind evaluation workflow
+- [x] Pass Phase 2 exit gate (`swift run TitizEval` structured baseline report), update `Progress.md`, commit & push
 
 ### Phase 3 — 3-Bucket Character Engine & Statistical Disambiguator
 - [ ] Implement internal one-way GPA decision-list scorer (MIT attribution to Deniz Yüret in `THIRD_PARTY_NOTICES.md`)
@@ -81,6 +81,8 @@
 | ADR-006 | 2026-11-19 | Embed `hunspell/hunspell` `v1.7.6` (`15faca15532b34db3106d50f162e5edc2503d6d6`) statically (`HUNSPELL_STATIC`, `BUILDING_LIBHUNSPELL`) behind an `OpaquePointer` C ABI (`CHunspell.h`) with pre-init `access(..., R_OK)` validation and `NSLock` synchronization in `HunspellDictionary`. | Isolates C++ Hunspell headers from Swift 6, avoids silent empty-dictionary creation on missing files, and ensures thread-safe concurrent access. |
 | ADR-007 | 2026-11-19 | Normalize input to UTF-8 NFC via extended grapheme cluster mapping in `TextNormalizer`, using UTF-8 byte equality (`elementsEqual`) rather than canonically-equivalent Swift `==`. | Reliably detects NFD inputs while preserving exact UTF-16 and `String.Index` offset mappings for UI diff highlights. |
 | ADR-008 | 2026-11-19 | Keep quote punctuation as separate `.punctuation` tokens in `StructuralLexer` and apply `.quotedUILabel` Tier 0 protection in `Tier0Protector` over the token stream. | Preserves clean punctuation boundaries for Phase 5 spacing rules while protecting short quoted UI labels (`"Search"`, `'Gönder'`, `“Yine de Aç”`). |
+| ADR-009 | 2026-11-19 | Align `EvalScorer` diffs via weighted non-whitespace LCS (exact match > Turkish ASCII-folded match) with gap prefix/suffix trimming and minimal `ExpectedEdit` signature matching. | Prevents space tokens inside word splits (`varmı ? -> var mı?`, `güzelmiydi -> güzel miydi`) from misaligning across sentence spaces while keeping multi-word edits distinct. |
+| ADR-010 | 2026-11-19 | Enforce strict summary-only blind output in `ReportFormatter` (`--blind`) paired with gitignored local `Datasets/blind_cases.json` and `Datasets/blind_cases.schema.json`. | Guarantees held-out blind examples are never leaked or tuned against during rule/threshold calibration. |
 
 ---
 
@@ -97,6 +99,7 @@ Target gates (from `SPEC.md` Phase 2):
 | --- | --- | --- | --- | --- | --- | --- |
 | Phase 0 | Bootstrap skeleton (`TitizEval` harness arrives in Phase 2) | N/A | N/A | N/A | N/A | N/A |
 | Phase 1 | Embedded Hunspell, NFC/`tr_TR`, Lexer, Tier 0 (`TitizEval` harness arrives in Phase 2) | N/A | N/A | N/A | N/A | N/A |
+| Phase 2 | `Datasets/dev_cases.json` (60 cases, pass-through baseline) | 0.00% (0/340); Clean: 0.00% (0/123) | 100.00% (48/48; T1: 3/3, T2A: 9/9) | Bucket 1: 0.00% (0/70); Overall: 0.00% (0/132) | N/A (0 edits) | 273c: 0.412 / 0.553 ms; 1926c: 1.955 / 2.441 ms |
 
 ---
 
@@ -128,4 +131,14 @@ Target gates (from `SPEC.md` Phase 2):
 - `swift build` — Passed (`exit 0`, 0 errors, 0 Swift compiler warnings).
 - `swift test` — Passed (`exit 0`, Swift Testing: 20 tests across 4 suites — `"Titiz Bootstrap"`, `"HunspellDictionary"`, `"TurkishLocale & TextNormalizer"`, `"StructuralLexer & Tier 0 Protection"` — passed in 3.511 seconds; 0 failures).
 - `swift run TitizEval` — Passed (`exit 0`, printed `TitizCore version: 0.1.0-dev` and `CHunspell bridge version: 1.7.6`).
+- `SPEC.md` — Verified present and unmodified.
+
+## Phase 2 Verification Notes
+
+- **Dataset Seeded:** `Datasets/dev_cases.json` (60 cases: 20 `character`, 20 `spelling`, 20 `combined`; 7 clean sentences, 70 Bucket 1 edits, 132 total in-scope edits, 48 protected spans across `tier0`, `tier1`, `tier2A`, `tier2B`, `tier3`, `foreign_term`).
+- **Blind Discipline Artifacts:** `Datasets/blind_cases.schema.json` (JSON Schema Draft 2020-12) and `Datasets/README.md`.
+- `swift build` — Passed (`exit 0`, 0 errors, 0 Swift compiler warnings).
+- `swift test` — Passed (`exit 0`, Swift Testing: 27 tests across 5 suites including `"TitizEval Harness & Datasets"` passed in 3.667 seconds; 0 failures).
+- `swift run TitizEval` — Passed (`exit 0`, baseline report over 60 cases: FP 0.00% [0/340], Clean FP 0.00% [0/123], Retention 100.00% [48/48], Recall Bucket 1 0.00% [0/70], Recall Overall 0.00% [0/132], Precision N/A [0 edits]; Latency 273c p50=0.412 ms / p95=0.553 ms, 1926c p50=1.955 ms / p95=2.441 ms).
+- `swift run TitizEval --json --skip-latency` — Passed (`exit 0`, valid JSON report emitted).
 - `SPEC.md` — Verified present and unmodified.

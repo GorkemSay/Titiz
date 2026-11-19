@@ -23,9 +23,10 @@ public struct TitizEngine: Sendable {
 
     /// Processes input text under the specified correction mode.
     ///
-    /// Character and spelling rewrite engines arrive in Phases 3–5; currently preserves input untouched.
+    /// Character and spelling rewrite engines arrive in Phases 3–5; currently runs analysis and preserves input untouched.
     public func correct(_ text: String, mode: CorrectionMode = .combined) -> CorrectionResult {
-        CorrectionResult(
+        _ = analyze(text)
+        return CorrectionResult(
             originalText: text,
             correctedText: text,
             mode: mode

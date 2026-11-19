@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/GorkemSay/Titiz/Datasets/blind_cases.schema.json",
+  "title": "Titiz Blind Evaluation Dataset Schema",
+  "description": "Schema for held-out blind evaluation sets run locally via `swift run TitizEval --blind <path>`. Blind datasets must never be committed or inspected during rule tuning.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "datasetName",
+    "description",
+    "cases"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0",
+      "description": "Schema version identifier."
+    },
+    "datasetName": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable name of the dataset."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Short description of dataset scope and provenance."
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/evalCase"
+      }
+    }
+  },
+  "$defs": {
+    "evalCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "mode",
+        "category",
+        "isCleanSentence",
+        "input",
+        "expected",
+        "expectedEdits"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique identifier for this evaluation case."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["character", "spelling", "combined"],
+          "description": "TitizEngine operating mode to evaluate."
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "clean",
+            "ascii_turkish",
+            "mixed_diacritics",
+            "code_switched",
+            "colliding_entities",
+            "minimal_pairs",
+            "punctuation_spacing",
+            "capitalization",
+            "question_particle",
+            "closed_tdk",
+            "fused_clitics",
+            "out_of_scope_guard",
+            "structural_tier0",
+            "personal_dictionary"
+          ],
+          "description": "Linguistic or protection category for segmented reporting."
+        },
+        "isCleanSentence": {
+          "type": "boolean",
+          "description": "True when input is already completely valid and must remain identical to expected."
+        },
+        "input": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Input string passed to TitizEngine.correct(_:mode:)."
+        },
+        "expected": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Gold UTF-8 NFC expected output string."
+        },
+        "personalDictionary": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Optional Tier 1 personal dictionary entries active for this case."
+        },
+        "expectedEdits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/expectedEdit"
+          },
+          "description": "Gold minimal edits aligned 1-to-1 with diff(input, expected)."
+        },
+        "protectedSpans": {
+          "type": ["array", "null"],
+          "items": {
+            "$ref": "#/$defs/protectedSpan"
+          },
+          "description": "Spans that must be preserved verbatim in the output."
+        },
+        "notes": {
+          "type": ["string", "null"],
+          "description": "Optional reviewer or linguistic explanation."
+        }
+      }
+    },
+    "expectedEdit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["original", "expected", "bucket", "origin"],
+      "properties": {
+        "original": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Original word or minimal context window containing the error."
+        },
+        "expected": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Gold corrected form for the corresponding span."
+        },
+        "bucket": {
+          "type": "string",
+          "enum": ["bucket1", "bucket2", "spelling", "spelling_joint"],
+          "description": "Edit difficulty/origin bucket for recall reporting."
+        },
+        "origin": {
+          "type": "string",
+          "enum": ["character", "spelling"],
+          "description": "Pipeline stage responsible for the edit."
+        }
+      }
+    },
+    "protectedSpan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "tier"],
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Exact protected token or multi-word span."
+        },
+        "tier": {
+          "type": "string",
+          "enum": ["tier0", "tier1", "tier2A", "tier2B", "tier3", "foreign_term"],
+          "description": "Protection tier expected to retain this span."
+        }
+      }
+    }
+  }
+}
