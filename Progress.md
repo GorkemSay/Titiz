@@ -22,13 +22,13 @@
 - [x] Create public GitHub repository `GorkemSay/Titiz` and push initial Phase 0 commit to `origin/main`
 
 ### Phase 1 — Embedded Hunspell (`CHunspell`), NFC/`tr_TR`, Lexer & Tier 0 Protection
-- [ ] Integrate `hunspell/hunspell` into `CHunspell`
-- [ ] Pin `tdd-ai/hunspell-tr` (`tr_TR.dic`, `tr_TR.aff`) as bundle resources and record revision/license in `THIRD_PARTY_NOTICES.md`
-- [ ] Implement thread-safe `HunspellDictionary` wrapper
-- [ ] Implement UTF-8 NFC normalizer with character/UTF-16 offset mapping and `Locale(identifier: "tr_TR")` case helpers
-- [ ] Implement Structural Lexer (including `'` / `’` stem-suffix splitting) and Tier 0 structural protection
-- [ ] Write thorough unit tests (`İ/I/ı/i` edge cases, NFD input, `yarin,disari`, `"Search"`, `MaviKutu`, `Intel'den`, URLs, emails, paths)
-- [ ] Pass Phase 1 exit gate, update `Progress.md`, commit & push
+- [x] Integrate `hunspell/hunspell` into `CHunspell`
+- [x] Pin `tdd-ai/hunspell-tr` (`tr_TR.dic`, `tr_TR.aff`) as bundle resources and record revision/license in `THIRD_PARTY_NOTICES.md`
+- [x] Implement thread-safe `HunspellDictionary` wrapper
+- [x] Implement UTF-8 NFC normalizer with character/UTF-16 offset mapping and `Locale(identifier: "tr_TR")` case helpers
+- [x] Implement Structural Lexer (including `'` / `’` stem-suffix splitting) and Tier 0 structural protection
+- [x] Write thorough unit tests (`İ/I/ı/i` edge cases, NFD input, `yarin,disari`, `"Search"`, `MaviKutu`, `Intel'den`, URLs, emails, paths)
+- [x] Pass Phase 1 exit gate, update `Progress.md`, commit & push
 
 ### Phase 2 — Evaluation Harness (`TitizEval`) & Dataset Discipline
 - [ ] Build `TitizEval` CLI measuring False-Positive Corruption Rate, Protected Entity/Foreign Term Retention, True Error Recall, Edit Precision, and Latency p50/p95 (300-char & 2,000-char inputs)
@@ -78,6 +78,9 @@
 | ADR-003 | 2026-11-19 | Adopt Swift Testing (`import Testing`) as the primary test framework for `TitizCoreTests`. | Ships natively with Xcode 27.2 / Swift 6.4.2 and provides expressive parameterized suites and clear failure diagnostics. |
 | ADR-004 | 2026-11-19 | Expose `CHunspell` via an `extern "C"` bridge header (`Sources/CHunspell/include/CHunspell.h`) while keeping C++ Hunspell internals isolated behind it. | Avoids C++ Swift interop complexity in `TitizCore` and establishes a clean ABI boundary for Phase 1 Hunspell integration. |
 | ADR-005 | 2026-11-19 | Ignore `Datasets/blind_cases.json` and `Datasets/*.local.json` in `.gitignore` while tracking `Datasets/blind_cases.schema.json`. | Ensures user-provided held-out blind evaluation data stays local and is never accidentally committed or tuned against. |
+| ADR-006 | 2026-11-19 | Embed `hunspell/hunspell` `v1.7.6` (`15faca15532b34db3106d50f162e5edc2503d6d6`) statically (`HUNSPELL_STATIC`, `BUILDING_LIBHUNSPELL`) behind an `OpaquePointer` C ABI (`CHunspell.h`) with pre-init `access(..., R_OK)` validation and `NSLock` synchronization in `HunspellDictionary`. | Isolates C++ Hunspell headers from Swift 6, avoids silent empty-dictionary creation on missing files, and ensures thread-safe concurrent access. |
+| ADR-007 | 2026-11-19 | Normalize input to UTF-8 NFC via extended grapheme cluster mapping in `TextNormalizer`, using UTF-8 byte equality (`elementsEqual`) rather than canonically-equivalent Swift `==`. | Reliably detects NFD inputs while preserving exact UTF-16 and `String.Index` offset mappings for UI diff highlights. |
+| ADR-008 | 2026-11-19 | Keep quote punctuation as separate `.punctuation` tokens in `StructuralLexer` and apply `.quotedUILabel` Tier 0 protection in `Tier0Protector` over the token stream. | Preserves clean punctuation boundaries for Phase 5 spacing rules while protecting short quoted UI labels (`"Search"`, `'Gönder'`, `“Yine de Aç”`). |
 
 ---
 
@@ -93,6 +96,7 @@ Target gates (from `SPEC.md` Phase 2):
 | Phase | Dataset / Scope | False-Positive Corruption | Entity / Foreign Retention | True Error Recall | Edit Precision | Latency p50 / p95 (300c / 2000c) |
 | --- | --- | --- | --- | --- | --- | --- |
 | Phase 0 | Bootstrap skeleton (`TitizEval` harness arrives in Phase 2) | N/A | N/A | N/A | N/A | N/A |
+| Phase 1 | Embedded Hunspell, NFC/`tr_TR`, Lexer, Tier 0 (`TitizEval` harness arrives in Phase 2) | N/A | N/A | N/A | N/A | N/A |
 
 ---
 
@@ -105,6 +109,7 @@ Target gates (from `SPEC.md` Phase 2):
 | R-03 | macOS 14–15 runtime compatibility is unverified on the macOS 27.2.1 host. | UI layout or material fallback regressions on older macOS releases. | Keep `#available(macOS 26.0, *)` guards clean and explicitly document unverified status in `README.md` until tested on macOS 14–15. |
 | R-04 | Short-word and English-Turkish collisions (e.g., `is`, `son`, `on`, `can`, `gun`) causing false positives. | Violates #1 "never break what is already correct" rule. | Enforce Bucket 2 conservative log-odds threshold, bundled English wordlist collision check, and build-time Wikidata Tier2A/2B cross-filtering. |
 | R-05 | Hunspell's 2-fold affix stripping limit rejecting valid agglutinative Turkish inflections. | Could trigger spurious edits if Hunspell rejection were treated as proof of error. | Enforce strict invariant: Hunspell rejection alone never triggers an error; only evaluate constrained ASCII diacritic candidates and known high-precision TDK rules. |
+| R-06 | `tdd-ai/hunspell-tr` `tr_TR.aff` (177,803 lines) takes ~2–3s to parse per instance in debug builds and derives ambiguous ASCII forms such as `yarin` (`ya` + `SFX 27513`). | Per-request dictionary initialization would violate latency gates; naive Bucket 1 assumptions on `yarin` would under-correct. | Share a single cached `HunspellDictionary` instance across `TitizEngine` requests, and handle `yarin -> yarın` via Phase 3 Bucket 2 statistical disambiguation. |
 
 ---
 
@@ -113,4 +118,14 @@ Target gates (from `SPEC.md` Phase 2):
 - `swift build` — Passed (`exit 0`, 0 errors, 0 compiler warnings; built all 5 targets: `CHunspell`, `TitizCore`, `TitizEval`, `TitizApp`, `TitizCoreTests`).
 - `swift test` — Passed (`exit 0`, Swift Testing: 3 tests in 1 suite `"Titiz Bootstrap"` passed in 0.001 seconds; 0 failures).
 - `swift run TitizEval` — Passed (`exit 0`, printed `TitizCore version: 0.1.0-dev` and `CHunspell bridge version: 0.0.0-bootstrap`).
+- `SPEC.md` — Verified present and unmodified.
+
+## Phase 1 Verification Notes
+
+- **Pinned Upstream Assets:**
+  - `hunspell/hunspell` `v1.7.6` (`15faca15532b34db3106d50f162e5edc2503d6d6`, 2026-10-26) in `Sources/CHunspell/hunspell/`.
+  - `tdd-ai/hunspell-tr` `main` (`7302eca5f3652fe7ae3d3ec06c44697c97342b4e`, 2023-12-30) in `Sources/TitizCore/Resources/tr_TR.{dic,aff}`.
+- `swift build` — Passed (`exit 0`, 0 errors, 0 Swift compiler warnings).
+- `swift test` — Passed (`exit 0`, Swift Testing: 20 tests across 4 suites — `"Titiz Bootstrap"`, `"HunspellDictionary"`, `"TurkishLocale & TextNormalizer"`, `"StructuralLexer & Tier 0 Protection"` — passed in 3.511 seconds; 0 failures).
+- `swift run TitizEval` — Passed (`exit 0`, printed `TitizCore version: 0.1.0-dev` and `CHunspell bridge version: 1.7.6`).
 - `SPEC.md` — Verified present and unmodified.

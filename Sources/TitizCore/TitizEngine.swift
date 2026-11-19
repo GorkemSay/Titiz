@@ -13,9 +13,17 @@ public struct TitizEngine: Sendable {
 
     public init() {}
 
+    /// Runs Phase 1 UTF-8 NFC normalization, structural lexing, and Tier 0 protection.
+    public func analyze(_ text: String) -> AnalyzedDocument {
+        let normalized = TextNormalizer.normalize(text)
+        let lexed = StructuralLexer.tokenize(normalized)
+        let protectedTokens = Tier0Protector.apply(to: lexed)
+        return AnalyzedDocument(normalized: normalized, tokens: protectedTokens)
+    }
+
     /// Processes input text under the specified correction mode.
     ///
-    /// Phase 0 bootstrap implementation returns the original text untouched.
+    /// Character and spelling rewrite engines arrive in Phases 3–5; currently preserves input untouched.
     public func correct(_ text: String, mode: CorrectionMode = .combined) -> CorrectionResult {
         CorrectionResult(
             originalText: text,

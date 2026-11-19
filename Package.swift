@@ -25,12 +25,20 @@ let package = Package(
         .target(
             name: "CHunspell",
             path: "Sources/CHunspell",
-            publicHeadersPath: "include"
+            publicHeadersPath: "include",
+            cxxSettings: [
+                .headerSearchPath("hunspell"),
+                .define("HUNSPELL_STATIC"),
+                .define("BUILDING_LIBHUNSPELL")
+            ]
         ),
         .target(
             name: "TitizCore",
             dependencies: ["CHunspell"],
-            path: "Sources/TitizCore"
+            path: "Sources/TitizCore",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .executableTarget(
             name: "TitizEval",

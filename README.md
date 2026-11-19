@@ -110,7 +110,7 @@ GitHub Releases üzerinden dağıtılan imzasız `Titiz.app` paketini ilk kez a�
 | Faz | Kapsam | Durum |
 | --- | --- | --- |
 | Faz 0 | Depo kurulumu, dokümantasyon ve SwiftPM iskeleti | Tamamlandı |
-| Faz 1 | Gömülü Hunspell (`CHunspell`), NFC/`tr_TR`, Lexer ve Tier 0 koruma | Planlandı |
+| Faz 1 | Gömülü Hunspell (`CHunspell`), NFC/`tr_TR`, Lexer ve Tier 0 koruma | Tamamlandı |
 | Faz 2 | `TitizEval` ölçüm aracı ve veri kümesi altyapısı | Planlandı |
 | Faz 3 | 3 kovalı Karakter Motoru ve istatistiksel ayrıştırıcı | Planlandı |
 | Faz 4 | 4 katmanlı özel ad koruması ve Kişisel Sözlük | Planlandı |

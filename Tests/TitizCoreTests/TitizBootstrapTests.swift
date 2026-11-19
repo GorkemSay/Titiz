@@ -3,9 +3,9 @@ import Testing
 
 @Suite("Titiz Bootstrap")
 struct TitizBootstrapTests {
-    @Test("CHunspell C bridge links cleanly")
+    @Test("CHunspell C++ bridge links cleanly and reports pinned Hunspell version")
     func hunspellBridgeVersion() {
-        #expect(TitizEngine.hunspellBridgeVersion == "0.0.0-bootstrap")
+        #expect(TitizEngine.hunspellBridgeVersion == "1.7.6")
     }
 
     @Test("CorrectionMode exposes all three required modes")
