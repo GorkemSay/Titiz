@@ -11,7 +11,22 @@ public struct TitizEngine: Sendable {
         String(cString: chunspell_bridge_version())
     }
 
-    public init() {}
+    public let resources: TitizResources
+    private let characterEngine: CharacterEngine
+
+    public init(
+        resources: TitizResources = .shared,
+        characterConfig: CharacterEngineConfiguration = .default
+    ) {
+        self.resources = resources
+        self.characterEngine = CharacterEngine(
+            dictionary: resources.dictionary,
+            gpaScorer: resources.gpaScorer,
+            englishWordlist: resources.englishWordlist,
+            frequencyTable: resources.frequencyTable,
+            config: characterConfig
+        )
+    }
 
     /// Runs Phase 1 UTF-8 NFC normalization, structural lexing, and Tier 0 protection.
     public func analyze(_ text: String) -> AnalyzedDocument {
@@ -22,14 +37,29 @@ public struct TitizEngine: Sendable {
     }
 
     /// Processes input text under the specified correction mode.
-    ///
-    /// Character and spelling rewrite engines arrive in Phases 3–5; currently runs analysis and preserves input untouched.
     public func correct(_ text: String, mode: CorrectionMode = .combined) -> CorrectionResult {
-        _ = analyze(text)
-        return CorrectionResult(
-            originalText: text,
-            correctedText: text,
-            mode: mode
-        )
+        let analyzed = analyze(text)
+
+        switch mode {
+        case .character:
+            return characterEngine.process(analyzed)
+        case .spelling:
+            // Deterministic TDK spelling & punctuation rules arrive in Phase 5.
+            return CorrectionResult(
+                originalText: analyzed.normalized.original,
+                correctedText: analyzed.normalized.original,
+                mode: .spelling
+            )
+        case .combined:
+            // Phase 4 adds Tier 1-3 protection and Phase 5 adds Spelling + Joint split-and-deasciify.
+            let charResult = characterEngine.process(analyzed)
+            return CorrectionResult(
+                originalText: charResult.originalText,
+                correctedText: charResult.correctedText,
+                mode: .combined,
+                edits: charResult.edits,
+                ambiguousSuggestions: charResult.ambiguousSuggestions
+            )
+        }
     }
 }

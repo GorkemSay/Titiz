@@ -1,0 +1,54 @@
+{
+  "formatVersion": 1,
+  "hashAlgorithm": "FNV-1a-64-UTF8",
+  "corpora": [
+    {
+      "name": "Leipzig Corpora Collection — tur_wikipedia_2021_300K",
+      "url": "https://downloads.wortschatz-leipzig.de/corpora/tur_wikipedia_2021_300K.tar.gz",
+      "license": "CC BY 4.0"
+    },
+    {
+      "name": "Leipzig Corpora Collection — tur_news_2020_300K",
+      "url": "https://downloads.wortschatz-leipzig.de/corpora/tur_news_2020_300K.tar.gz",
+      "license": "CC BY 4.0"
+    }
+  ],
+  "totalSentences": 600000,
+  "totalTokens": 8065855,
+  "unigramCount": 150000,
+  "bigramCount": 337054,
+  "binarySizeBytes": 4383502,
+  "quantization": {
+    "unigramMinLog10": -8.0,
+    "unigramMaxLog10": -1.0,
+    "bigramMinLog10": -6.0,
+    "bigramMaxLog10": 0.0,
+    "bigramSmoothingAlpha": 0.5,
+    "bigramSmoothingVocab": 200.0
+  },
+  "sanityChecks": {
+    "yarın_uni": -3.937,
+    "yarin_uni": -8.2,
+    "iş_uni": -3.169,
+    "is_uni": -5.173,
+    "akşam_uni": -3.8,
+    "aksam_uni": -5.941,
+    "dün_uni": -3.608,
+    "dun_uni": -6.051,
+    "hazır_uni": -3.91,
+    "hazir_uni": -8.2,
+    "şok_uni": -4.322,
+    "sok_uni": -6.216,
+    "işe_uni": -3.992,
+    "ise_uni": -2.565,
+    "işim_uni": -5.392,
+    "isim_uni": -3.855,
+    "işe|gittim_bi": -2.5647058823529414,
+    "ise|gittim_bi": null,
+    "işim|var_bi": -1.3882352941176466,
+    "isim|var_bi": -2.1647058823529415,
+    "güzel|ise_bi": null,
+    "güzel|işe_bi": null,
+    "basın_uni": -3.745
+  }
+}

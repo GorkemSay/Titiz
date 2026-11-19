@@ -97,21 +97,39 @@ struct TitizEvalTests {
             ]
         )
 
+        let cleanOnlyDataset = EvalDataset(
+            schemaVersion: "1.0.0",
+            datasetName: "unit-zero-edit-test",
+            description: "Clean sentence test",
+            cases: [
+                EvalCase(
+                    id: "unit-clean-01",
+                    mode: .character,
+                    category: .clean,
+                    isCleanSentence: true,
+                    input: "Bugün dışarı çıkacağım.",
+                    expected: "Bugün dışarı çıkacağım.",
+                    expectedEdits: []
+                )
+            ]
+        )
+
+        // Clean input causes 0 proposed edits -> editPrecision must be nil (never faked as 100%)
+        let zeroEditReport = EvalScorer.evaluate(dataset: cleanOnlyDataset, using: TitizEngine())
+        #expect(zeroEditReport.overall.proposedEdits == 0)
+        #expect(zeroEditReport.overall.editPrecision == nil)
+
+        // Bucket 1 only engine output vs Bucket 1 + Bucket 2 dataset
         let dataset = EvalDataset(
             schemaVersion: "1.0.0",
             datasetName: "unit-bucket-test",
             description: "Synthetic bucket test",
             cases: [testCase]
         )
-
-        // Pass-through engine proposes 0 edits -> editPrecision must be nil (never 100%)
         let report = EvalScorer.evaluate(dataset: dataset, using: TitizEngine())
-        #expect(report.overall.proposedEdits == 0)
-        #expect(report.overall.editPrecision == nil)
         #expect(report.overall.expectedBucket1Edits == 2)
         #expect(report.overall.expectedEditsTotal == 3)
-        #expect(report.overall.recalledBucket1Edits == 0)
-        #expect(!report.allGatesPass)
+        #expect(report.overall.recalledBucket1Edits == 2)
 
         // Direct scoreCase solving both Bucket 1 edits while leaving Bucket 2 untouched
         let (bucket1OnlyEval, _) = EvalScorer.scoreCase(testCase, actual: "yarin dışarı çıkacağım")

@@ -15,10 +15,20 @@ public struct CorrectionResult: Sendable, Equatable {
     public let originalText: String
     public let correctedText: String
     public let mode: CorrectionMode
+    public let edits: [Edit]
+    public let ambiguousSuggestions: [AmbiguousTokenSuggestion]
 
-    public init(originalText: String, correctedText: String, mode: CorrectionMode) {
+    public init(
+        originalText: String,
+        correctedText: String,
+        mode: CorrectionMode,
+        edits: [Edit] = [],
+        ambiguousSuggestions: [AmbiguousTokenSuggestion] = []
+    ) {
         self.originalText = originalText
         self.correctedText = correctedText
         self.mode = mode
+        self.edits = edits
+        self.ambiguousSuggestions = ambiguousSuggestions
     }
 }

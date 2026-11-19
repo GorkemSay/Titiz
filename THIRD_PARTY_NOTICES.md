@@ -10,9 +10,9 @@ Titiz bundles and incorporates open-source software, linguistic dictionaries, de
 | --- | --- | --- | --- | --- | --- |
 | Hunspell spellchecker engine | `Sources/CHunspell/hunspell/` | `https://github.com/hunspell/hunspell` | `v1.7.6` (`15faca15532b34db3106d50f162e5edc2503d6d6`, 2026-10-26) | MPL-1.1 / LGPL-2.1+ / GPL-2.0+ | Integrated — Phase 1 |
 | Turkish Hunspell dictionary & affix rules (`tr_TR.dic`, `tr_TR.aff`) | `Sources/TitizCore/Resources/` | `https://github.com/tdd-ai/hunspell-tr` | `main` (`7302eca5f3652fe7ae3d3ec06c44697c97342b4e`, 2023-12-30) | MPL-2.0 | Integrated — Phase 1 |
-| Turkish Deasciifier GPA decision-list algorithm & pattern table | `Sources/TitizCore/CharacterEngine/` | Deniz Yüret GPA decision list | TBD (Phase 3) | MIT | Planned — Phase 3 |
-| Bundled English common & technical wordlist | `Sources/TitizCore/Resources/` | Open-license wordlist (TBD) | TBD (Phase 3) | Open-license TBD | Planned — Phase 3 |
-| Turkish unigram & quantized bigram frequency tables | `Sources/TitizCore/Resources/` | Open / CC-licensed corpus (TBD) | TBD (Phase 3) | Open / CC TBD | Planned — Phase 3 |
+| Turkish Deasciifier GPA decision-list algorithm & pattern table (`gpa_patterns.json`) | `Sources/TitizCore/CharacterEngine/` & `Resources/` | `https://github.com/denizyuret/deasciify` | `master` (`9d44765ed722c597e631824bba423bd5de17559a`, 2016-01-14) | MIT | Integrated — Phase 3 |
+| Bundled English common & technical wordlist (`en_common_tech.txt`) | `Sources/TitizCore/Resources/` | `jeremy-rifkin/Wordlist` + Leipzig `eng_news_2020_100K` | `df67e6e28bc9c8771816846a962500ec20fa5cfd` (2020-11-10) + `eng_news_2020_100K` | MIT & CC BY 4.0 | Integrated — Phase 3 |
+| Turkish unigram & quantized bigram frequency tables (`tr_freq.bin`) | `Sources/TitizCore/Resources/` | Leipzig Corpora Collection (`tur_wikipedia_2021_300K`, `tur_news_2020_300K`) | `2021_300K` & `2020_300K` | CC BY 4.0 | Integrated — Phase 3 |
 | Collision-filtered entity bundles (`Tier2A`, `Tier2B`, `Tier3`) | `Sources/TitizCore/Resources/` | Wikidata (generated offline via `scripts/build-wikidata-entities.py`) | TBD (Phase 4) | CC0 1.0 | Planned — Phase 4 |
 
 ---
@@ -77,17 +77,73 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.
 Citation:
 - Ali Safaya, Emirhan Kurtuluş, Arda Göktoğan, and Deniz Yuret. "Mukayese: Turkish NLP Strikes Back." *Findings of the Association for Computational Linguistics: ACL 2022*, pp. 846–863.
 
-### 3. GPA Decision-List Algorithm (Deniz Yüret)
-- *Status:* Planned (Phase 3).
-- *Notice:* Pending integration (MIT attribution will be included verbatim).
+### 3. GPA Decision-List Algorithm & Pattern Tables (Deniz Yüret)
+- **Status:** Integrated (Phase 3).
+- **Upstream URL:** `https://github.com/denizyuret/deasciify`
+- **Pinned Revision:** Branch `master`, commit `9d44765ed722c597e631824bba423bd5de17559a` (2016-01-14).
+- **Embedded Files:** `Sources/TitizCore/Resources/gpa_patterns.json` (extracted from `turkish.el`) and Swift implementation in `Sources/TitizCore/CharacterEngine/GPAScorer.swift`.
+- **License:** MIT License (`LICENSE`).
+
+```text
+The MIT License (MIT)
+
+Copyright (c) 2016 denizyuret
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+```
 
 ### 4. English Common & Technical Wordlist
-- *Status:* Planned (Phase 3).
-- *Notice:* Pending selection and integration.
+- **Status:** Integrated (Phase 3).
+- **Upstream Sources:**
+  - `https://github.com/jeremy-rifkin/Wordlist` (`master.txt`, commit `df67e6e28bc9c8771816846a962500ec20fa5cfd`, 2020-11-10) — MIT License.
+  - Leipzig Corpora Collection `eng_news_2020_100K` (`https://downloads.wortschatz-leipzig.de/corpora/eng_news_2020_100K.tar.gz`) used strictly for ranking common English words — Creative Commons Attribution 4.0 International (CC BY 4.0).
+- **Embedded File:** `Sources/TitizCore/Resources/en_common_tech.txt` (40,171 lowercase ASCII English + modern software/UI words).
+- **MIT Notice (`jeremy-rifkin/Wordlist`):**
+
+```text
+Copyright 2015-2019 Jeremy M. Rifkin
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+```
 
 ### 5. Turkish Unigram & Quantized Bigram Frequency Tables
-- *Status:* Planned (Phase 3).
-- *Notice:* Pending corpus selection and generation.
+- **Status:** Integrated (Phase 3).
+- **Upstream Sources:** Leipzig Corpora Collection (Wortschatz Leipzig, Leipzig University):
+  - `tur_wikipedia_2021_300K` (`https://downloads.wortschatz-leipzig.de/corpora/tur_wikipedia_2021_300K.tar.gz`)
+  - `tur_news_2020_300K` (`https://downloads.wortschatz-leipzig.de/corpora/tur_news_2020_300K.tar.gz`)
+- **Embedded Files:** `Sources/TitizCore/Resources/tr_freq.bin` and `Sources/TitizCore/Resources/tr_freq_meta.json` (generated via `scripts/build-frequency-tables.py`).
+- **License:** Creative Commons Attribution 4.0 International (`CC BY 4.0`, `https://creativecommons.org/licenses/by/4.0/`).
+- **Citation:** Dirk Goldhahn, Thomas Eckart, and Uwe Quasthoff. "Building Large Monolingual Dictionaries at the Leipzig Corpora Collection: From 100 to 200 Languages." *Proceedings of the Eighth International Conference on Language Resources and Evaluation (LREC'12)*, pp. 759–765, 2012.
 
 ### 6. Wikidata Entity Bundles (`Tier2A`, `Tier2B`, `Tier3`)
 - *Status:* Planned (Phase 4).

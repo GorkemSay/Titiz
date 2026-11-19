@@ -24,6 +24,14 @@ void chunspell_destroy(CHunspellHandle *handle);
 /// Checks whether a UTF-8 NFC word is accepted by the Hunspell dictionary.
 bool chunspell_spell(CHunspellHandle *handle, const char *word);
 
+/// Batch-checks an array of UTF-8 NFC words under a single bridge call.
+void chunspell_spell_batch(
+    CHunspellHandle *handle,
+    const char *const *words,
+    bool *results,
+    size_t count
+);
+
 /// Generates spelling suggestions for a UTF-8 NFC word.
 /// Caller must release `out_suggestions` with `chunspell_free_list`.
 size_t chunspell_suggest(CHunspellHandle *handle, const char *word, char ***out_suggestions);

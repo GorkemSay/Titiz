@@ -37,12 +37,12 @@
 - [x] Pass Phase 2 exit gate (`swift run TitizEval` structured baseline report), update `Progress.md`, commit & push
 
 ### Phase 3 — 3-Bucket Character Engine & Statistical Disambiguator
-- [ ] Implement internal one-way GPA decision-list scorer (MIT attribution to Deniz Yüret in `THIRD_PARTY_NOTICES.md`)
-- [ ] Implement vowel-harmony-pruned candidate generator and bundled ~30k–50k English common+tech wordlist guard
-- [ ] Create `scripts/build-frequency-tables.py` producing compact Turkish unigram + quantized bigram frequency tables from an open/CC-licensed corpus (source & license documented)
-- [ ] Wire Bucket 0 / Bucket 1 / Bucket 2 decision gate with conservative log-odds threshold and alternative candidate attachment
-- [ ] Verify mixed Turkish+ASCII regression tests (zero stripping of existing Turkish diacritics) and hit Phase 3 precision & latency gates
-- [ ] Update `Progress.md` with measured metrics, commit & push
+- [x] Implement internal one-way GPA decision-list scorer (MIT attribution to Deniz Yüret in `THIRD_PARTY_NOTICES.md`)
+- [x] Implement vowel-harmony-pruned candidate generator and bundled ~30k–50k English common+tech wordlist guard
+- [x] Create `scripts/build-frequency-tables.py` producing compact Turkish unigram + quantized bigram frequency tables from an open/CC-licensed corpus (source & license documented)
+- [x] Wire Bucket 0 / Bucket 1 / Bucket 2 decision gate with conservative log-odds threshold and alternative candidate attachment
+- [x] Verify mixed Turkish+ASCII regression tests (zero stripping of existing Turkish diacritics) and hit Phase 3 precision & latency gates
+- [x] Update `Progress.md` with measured metrics, commit & push
 
 ### Phase 4 — 4-Tier Proper Noun Protection & Personal Dictionary
 - [ ] Build `scripts/build-wikidata-entities.py` (Wikidata CC0, high-notability filtering + build-time collision filtering against ASCII-folded `tr_TR.dic` and English wordlist -> `Tier2A`, `Tier2B`, `Tier3` resources)
@@ -83,6 +83,10 @@
 | ADR-008 | 2026-11-19 | Keep quote punctuation as separate `.punctuation` tokens in `StructuralLexer` and apply `.quotedUILabel` Tier 0 protection in `Tier0Protector` over the token stream. | Preserves clean punctuation boundaries for Phase 5 spacing rules while protecting short quoted UI labels (`"Search"`, `'Gönder'`, `“Yine de Aç”`). |
 | ADR-009 | 2026-11-19 | Align `EvalScorer` diffs via weighted non-whitespace LCS (exact match > Turkish ASCII-folded match) with gap prefix/suffix trimming and minimal `ExpectedEdit` signature matching. | Prevents space tokens inside word splits (`varmı ? -> var mı?`, `güzelmiydi -> güzel miydi`) from misaligning across sentence spaces while keeping multi-word edits distinct. |
 | ADR-010 | 2026-11-19 | Enforce strict summary-only blind output in `ReportFormatter` (`--blind`) paired with gitignored local `Datasets/blind_cases.json` and `Datasets/blind_cases.schema.json`. | Guarantees held-out blind examples are never leaked or tuned against during rule/threshold calibration. |
+| ADR-011 | 2026-11-19 | Implement internal one-way Deniz Yüret GPA decision-list scorer (`gpa_patterns.json` from `denizyuret/deasciify` `9d44765ed722c597e631824bba423bd5de17559a`, MIT) using zero-allocation ASCII byte FNV-1a matching and `weightedSum / Double(predictions.count)` agreement normalization. | Guarantees strict one-way diacritic preservation, eliminates rank-3000 fallback rule inflation, and keeps release latency well under 10 ms. |
+| ADR-012 | 2026-11-19 | Add `chunspell_spell_batch` in `CHunspell` + `HunspellDictionary.containsBatch(_:assumeNFC:)` (32-item chunks, single lock acquisition) with intra-document caching (`mutableCount <= 7`). | Eliminates per-candidate lock and ICU NFC overhead across up to 128 dictionary probes, cutting 1,926-char Release p50 latency from 11.355 ms to 3.450 ms. |
+| ADR-013 | 2026-11-19 | Bundle 40,171-word English common+tech wordlist (`en_common_tech.txt` from MIT `jeremy-rifkin/Wordlist` + CC BY 4.0 Leipzig `eng_news_2020_100K` + curated tech terms) and `containsForeignStemWithTurkishSuffix(_:)` demoting English-stem + Turkish-suffix tokens (`loglarini`) from Bucket 1 to Bucket 2. | Prevents obscure `tr_TR.dic` entries (e.g., `loğ`) from corrupting code-switched Turkish technical terms. |
+| ADR-014 | 2026-11-19 | Build compact binary frequency table `tr_freq.bin` (150,000 unigrams + 337,054 ambiguity-filtered bigrams, 4.18 MiB) offline via `scripts/build-frequency-tables.py` from CC BY 4.0 Leipzig Turkish corpora (`tur_wikipedia_2021_300K` + `tur_news_2020_300K`, 8,065,855 tokens) with Lidstone smoothing and binary-search `TurkishFrequencyTable`. | Keeps Titiz 100% offline with compact storage and fast PMI-boosted Bucket 2 disambiguation. |
 
 ---
 
@@ -100,6 +104,8 @@ Target gates (from `SPEC.md` Phase 2):
 | Phase 0 | Bootstrap skeleton (`TitizEval` harness arrives in Phase 2) | N/A | N/A | N/A | N/A | N/A |
 | Phase 1 | Embedded Hunspell, NFC/`tr_TR`, Lexer, Tier 0 (`TitizEval` harness arrives in Phase 2) | N/A | N/A | N/A | N/A | N/A |
 | Phase 2 | `Datasets/dev_cases.json` (60 cases, pass-through baseline) | 0.00% (0/340); Clean: 0.00% (0/123) | 100.00% (48/48; T1: 3/3, T2A: 9/9) | Bucket 1: 0.00% (0/70); Overall: 0.00% (0/132) | N/A (0 edits) | 273c: 0.412 / 0.553 ms; 1926c: 1.955 / 2.441 ms |
+| Phase 3 (Character) | `Datasets/dev_cases.json` (20 `character` cases, Release) | 0.00% (0/78); Clean: 0.00% (0/45) | 100.00% (9/9; T2A: 1/1) | Bucket 1: 100.00% (37/37); Overall: 100.00% (44/44) | 100.00% (44/44) | Release: 273c 0.364 / 0.399 ms; 1926c 3.456 / 3.550 ms (Debug: 1.959 / 2.080 ms; 14.967 / 15.465 ms) |
+| Phase 3 (All 60 Dev) | `Datasets/dev_cases.json` (60 cases; Phase 4–5 rules pending) | 0.00% (0/340); Clean: 0.00% (0/123) | 100.00% (48/48; T1: 3/3, T2A: 9/9) | Bucket 1: 100.00% (70/70); Overall: 64.39% (85/132) | 96.59% (85/88) | Release: 273c 0.361 / 0.452 ms; 1926c 3.450 / 3.679 ms |
 
 ---
 
@@ -141,4 +147,17 @@ Target gates (from `SPEC.md` Phase 2):
 - `swift test` — Passed (`exit 0`, Swift Testing: 27 tests across 5 suites including `"TitizEval Harness & Datasets"` passed in 3.667 seconds; 0 failures).
 - `swift run TitizEval` — Passed (`exit 0`, baseline report over 60 cases: FP 0.00% [0/340], Clean FP 0.00% [0/123], Retention 100.00% [48/48], Recall Bucket 1 0.00% [0/70], Recall Overall 0.00% [0/132], Precision N/A [0 edits]; Latency 273c p50=0.412 ms / p95=0.553 ms, 1926c p50=1.955 ms / p95=2.441 ms).
 - `swift run TitizEval --json --skip-latency` — Passed (`exit 0`, valid JSON report emitted).
+- `SPEC.md` — Verified present and unmodified.
+
+## Phase 3 Verification Notes
+
+- **Pinned Upstream & Corpus Assets (`THIRD_PARTY_NOTICES.md` updated):**
+  - `denizyuret/deasciify` (`9d44765ed722c597e631824bba423bd5de17559a`, MIT) -> `Sources/TitizCore/Resources/gpa_patterns.json` via `scripts/build-character-assets.py`.
+  - `jeremy-rifkin/Wordlist` (`df67e6e28bc9c8771816846a962500ec20fa5cfd`, MIT) + Leipzig Corpora `eng_news_2020_100K` (CC BY 4.0) + curated tech terms -> `Sources/TitizCore/Resources/en_common_tech.txt` (40,171 words).
+  - Leipzig Corpora `tur_wikipedia_2021_300K` + `tur_news_2020_300K` (CC BY 4.0, 8,065,855 tokens) -> `Sources/TitizCore/Resources/tr_freq.bin` (150,000 unigrams, 337,054 ambiguity-filtered bigrams, 4.18 MiB) & `tr_freq_meta.json` via `scripts/build-frequency-tables.py`.
+- `swift build` — Passed (`exit 0`, 0 errors, 0 Swift compiler warnings).
+- `swift test` — Passed (`exit 0`, Swift Testing: 36 tests across 6 suites including `"CharacterEngine & Disambiguator"` passed in 3.768 seconds; 0 failures).
+- `swift run TitizEval --mode character --verbose` (Debug, 20 `character` cases) — Passed (`exit 0`, 20/20 exact match, FP 0.00% [0/78], Clean FP 0.00% [0/45], Retention 100.00% [9/9], Bucket 1 Recall 100.00% [37/37], Overall Recall 100.00% [44/44], Precision 100.00% [44/44]; Debug `.combined` latency: 273c p50=1.959 ms / p95=2.080 ms, 1926c p50=14.967 ms / p95=15.465 ms).
+- `swift run -c release TitizEval --mode character` (Release, 20 `character` cases) — Passed (`exit 0`, identical 100.00% quality metrics; Release `.combined` latency: 273c p50=0.364 ms / p95=0.399 ms [PASS], 1926c p50=3.456 ms / p95=3.550 ms [PASS]).
+- `swift run -c release TitizEval` (Release, all 60 cases) — Exited `0`, FP 0.00% [0/340], Clean FP 0.00% [0/123], Retention 100.00% [48/48; T1: 3/3, T2A: 9/9], Bucket 1 Recall 100.00% [70/70], Overall In-Scope Recall 64.39% [85/132] (Phases 4–5 spelling/combined rules pending), Precision 96.59% [85/88]; Release `.combined` latency: 273c p50=0.361 ms / p95=0.452 ms [PASS], 1926c p50=3.450 ms / p95=3.679 ms [PASS].
 - `SPEC.md` — Verified present and unmodified.

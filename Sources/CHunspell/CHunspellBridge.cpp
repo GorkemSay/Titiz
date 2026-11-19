@@ -48,6 +48,29 @@ bool chunspell_spell(CHunspellHandle *handle, const char *word) {
     return handle->engine->spell(std::string(word));
 }
 
+void chunspell_spell_batch(
+    CHunspellHandle *handle,
+    const char *const *words,
+    bool *results,
+    size_t count
+) {
+    if (results == nullptr || count == 0) {
+        return;
+    }
+
+    if (handle == nullptr || handle->engine == nullptr || words == nullptr) {
+        for (size_t i = 0; i < count; ++i) {
+            results[i] = false;
+        }
+        return;
+    }
+
+    for (size_t i = 0; i < count; ++i) {
+        const char *word = words[i];
+        results[i] = (word != nullptr && word[0] != '\0') ? handle->engine->spell(std::string(word)) : false;
+    }
+}
+
 size_t chunspell_suggest(CHunspellHandle *handle, const char *word, char ***out_suggestions) {
     if (out_suggestions == nullptr) {
         return 0;
