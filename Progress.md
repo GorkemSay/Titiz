@@ -1,0 +1,116 @@
+# Titiz Development Progress
+
+## Project & Environment Metadata
+
+- **Repository:** `https://github.com/GorkemSay/Titiz` (public)
+- **Local Workspace:** `/Users/gorkemsay/Desktop/App Devoloping/Titiz`
+- **Host Machine:** Apple Silicon Mac, macOS 27.2.1
+- **Toolchain:** Xcode 27.2 (Build 27B52), Apple Swift 6.4.2 (`arm64-apple-macosx27.2.0`)
+- **Deployment Target:** `macOS(.v14)` in `Package.swift` (with `#available(macOS 26.0, *)` Liquid Glass guard)
+- **Git Identity:** `Görkem Say <gorkemsay@protonmail.com>` (GitHub account: `GorkemSay`)
+
+---
+
+## Phased Roadmap Checklist
+
+### Phase 0 — Repository, Docs & Workspace Bootstrap
+- [x] Verify `gh auth status` and local git configuration (`init.defaultBranch` unset -> initialized explicitly with `git init -b main`)
+- [x] Initialize local git repository (`main`) while preserving `SPEC.md` completely intact
+- [x] Create `.gitignore`, `LICENSE` (MIT), `THIRD_PARTY_NOTICES.md`, `README.md`, and `Progress.md`
+- [x] Create compiling pure-SwiftPM `Package.swift` skeleton (`CHunspell`, `TitizCore`, `TitizEval`, `TitizApp`, `TitizCoreTests`)
+- [x] Run `swift build`, `swift test`, and `swift run TitizEval` cleanly with zero compiler warnings
+- [x] Create public GitHub repository `GorkemSay/Titiz` and push initial Phase 0 commit to `origin/main`
+
+### Phase 1 — Embedded Hunspell (`CHunspell`), NFC/`tr_TR`, Lexer & Tier 0 Protection
+- [ ] Integrate `hunspell/hunspell` into `CHunspell`
+- [ ] Pin `tdd-ai/hunspell-tr` (`tr_TR.dic`, `tr_TR.aff`) as bundle resources and record revision/license in `THIRD_PARTY_NOTICES.md`
+- [ ] Implement thread-safe `HunspellDictionary` wrapper
+- [ ] Implement UTF-8 NFC normalizer with character/UTF-16 offset mapping and `Locale(identifier: "tr_TR")` case helpers
+- [ ] Implement Structural Lexer (including `'` / `’` stem-suffix splitting) and Tier 0 structural protection
+- [ ] Write thorough unit tests (`İ/I/ı/i` edge cases, NFD input, `yarin,disari`, `"Search"`, `MaviKutu`, `Intel'den`, URLs, emails, paths)
+- [ ] Pass Phase 1 exit gate, update `Progress.md`, commit & push
+
+### Phase 2 — Evaluation Harness (`TitizEval`) & Dataset Discipline
+- [ ] Build `TitizEval` CLI measuring False-Positive Corruption Rate, Protected Entity/Foreign Term Retention, True Error Recall, Edit Precision, and Latency p50/p95 (300-char & 2,000-char inputs)
+- [ ] Seed `Datasets/dev_cases.json` across all 3 modes
+- [ ] Create `Datasets/blind_cases.schema.json` and document held-out blind evaluation workflow
+- [ ] Pass Phase 2 exit gate (`swift run TitizEval` structured baseline report), update `Progress.md`, commit & push
+
+### Phase 3 — 3-Bucket Character Engine & Statistical Disambiguator
+- [ ] Implement internal one-way GPA decision-list scorer (MIT attribution to Deniz Yüret in `THIRD_PARTY_NOTICES.md`)
+- [ ] Implement vowel-harmony-pruned candidate generator and bundled ~30k–50k English common+tech wordlist guard
+- [ ] Create `scripts/build-frequency-tables.py` producing compact Turkish unigram + quantized bigram frequency tables from an open/CC-licensed corpus (source & license documented)
+- [ ] Wire Bucket 0 / Bucket 1 / Bucket 2 decision gate with conservative log-odds threshold and alternative candidate attachment
+- [ ] Verify mixed Turkish+ASCII regression tests (zero stripping of existing Turkish diacritics) and hit Phase 3 precision & latency gates
+- [ ] Update `Progress.md` with measured metrics, commit & push
+
+### Phase 4 — 4-Tier Proper Noun Protection & Personal Dictionary
+- [ ] Build `scripts/build-wikidata-entities.py` (Wikidata CC0, high-notability filtering + build-time collision filtering against ASCII-folded `tr_TR.dic` and English wordlist -> `Tier2A`, `Tier2B`, `Tier3` resources)
+- [ ] Implement longest-match multi-word trie (`The Last of Us`), `Tier2B` context detector, and foreign-stem apostrophe suffix guard
+- [ ] Implement `Application Support/Titiz/personal_dictionary.json` store with immediate reload and highest precedence
+- [ ] Pass entity protection & collision unit tests + `TitizEval` entity retention >= 99% (100% Tier 1 / Tier 2A), update `Progress.md`, commit & push
+
+### Phase 5 — High-Precision Spelling Engine & Joint Combined Mode (`Düzelt`)
+- [ ] Implement `Resources/rules.json` (TDK citations, explanations, examples) and Swift spelling rules (punctuation spacing, `tr_TR` sentence-start capitalization, `mi/mı/mu/mü` separation, closed TDK list)
+- [ ] Implement Combined Mode (`Düzelt`) with joint split-and-deasciify (`ciktimi -> çıktı mı`, `varmi -> var mı`, `gordunmu -> gördün mü`, `hersey -> her şey`) and edit provenance tracking
+- [ ] Verify canonical target (`Intel ekibinden MaviKutu icin cevap geldimi?` -> `Intel ekibinden MaviKutu için cevap geldi mi?`)
+- [ ] Run full `TitizEval` benchmark across all 3 modes (plus blind set if provided), verify all Phase 2 thresholds met, log full report in `Progress.md`, commit & push
+
+### Phase 6 — Native macOS Menu Bar UI (`TitizApp` — Apple Liquid Glass)
+- [ ] Build `TitizApp` following Apple Liquid Glass guidelines on macOS 26+ (`#available(macOS 26.0, *)`) and clean material fallback on macOS 14–15 (zero AI slop)
+- [ ] Implement reliable AppKit focus/`⌘V`/`⌘C` menu bar window bridge
+- [ ] Implement inline diff highlighting, edit detail popover (TDK reason, alternatives, per-edit revert, "Bu adı hep koru"), selection-based multi-word "Bu adı hep koru", last-5 history persistence, and Settings view
+- [ ] Launch and verify live on local Mac (light mode, dark mode, Reduce Transparency, keyboard shortcuts, persistence across restarts), update `Progress.md`, commit & push
+
+### Phase 7 — Packaging, Release Script & Final Documentation Polish
+- [ ] Create `scripts/bundle-app.sh` producing self-contained `Titiz.app` (`LSUIElement = true`, all embedded dictionaries/tables/rules, optional ad-hoc `codesign --force --deep --sign -`) and `.zip`/`.dmg` release archive
+- [ ] Audit `THIRD_PARTY_NOTICES.md` and polish `README.md` (final architecture, benchmark results, build steps, Gatekeeper instructions, pending custom app icon note)
+- [ ] Verify fresh `Titiz.app` built from release script runs cleanly when launched directly, finalize `Progress.md`, commit & push
+
+---
+
+## Architecture Decision Log
+
+| ID | Date | Decision | Rationale |
+| --- | --- | --- | --- |
+| ADR-001 | 2026-11-19 | Use pure SwiftPM (`swift-tools-version: 6.0`, Swift 6 strict concurrency) with 5 targets (`CHunspell`, `TitizCore`, `TitizEval`, `TitizApp`, `TitizCoreTests`) and no `.xcodeproj`. | Keeps builds reproducible from CLI and IDE (`SweetPad`/`swiftlang`) and strictly isolates AppKit UI from the pure-Swift proofreading engine. |
+| ADR-002 | 2026-11-19 | Declare `macOS(.v14)` in `Package.swift` and guard native Liquid Glass APIs with `#available(macOS 26.0, *)` + material fallback. | Enables native Liquid Glass on macOS 26+ while maintaining a clean compile target for macOS 14–15 (runtime behavior on 14–15 remains unverified until tested on those versions). |
+| ADR-003 | 2026-11-19 | Adopt Swift Testing (`import Testing`) as the primary test framework for `TitizCoreTests`. | Ships natively with Xcode 27.2 / Swift 6.4.2 and provides expressive parameterized suites and clear failure diagnostics. |
+| ADR-004 | 2026-11-19 | Expose `CHunspell` via an `extern "C"` bridge header (`Sources/CHunspell/include/CHunspell.h`) while keeping C++ Hunspell internals isolated behind it. | Avoids C++ Swift interop complexity in `TitizCore` and establishes a clean ABI boundary for Phase 1 Hunspell integration. |
+| ADR-005 | 2026-11-19 | Ignore `Datasets/blind_cases.json` and `Datasets/*.local.json` in `.gitignore` while tracking `Datasets/blind_cases.schema.json`. | Ensures user-provided held-out blind evaluation data stays local and is never accidentally committed or tuned against. |
+
+---
+
+## Metrics Tracking Table
+
+Target gates (from `SPEC.md` Phase 2):
+- **False-Positive Corruption Rate:** <= 0.5% overall, 0% on clean-sentence subset
+- **Protected Entity / Foreign Term Retention:** >= 99% overall, 100% on Tier 1 & Tier 2A
+- **True Error Recall:** Bucket 1 >= 92%, overall in-scope >= 75–80%
+- **Edit Precision:** >= 95%
+- **Latency p50 / p95:** p50 < 10 ms; p95 < 25 ms (300-char) / < 80 ms (2,000-char)
+
+| Phase | Dataset / Scope | False-Positive Corruption | Entity / Foreign Retention | True Error Recall | Edit Precision | Latency p50 / p95 (300c / 2000c) |
+| --- | --- | --- | --- | --- | --- | --- |
+| Phase 0 | Bootstrap skeleton (`TitizEval` harness arrives in Phase 2) | N/A | N/A | N/A | N/A | N/A |
+
+---
+
+## Risk Register
+
+| ID | Risk | Impact | Mitigation |
+| --- | --- | --- | --- |
+| R-01 | `CHunspell` C++ compilation flags or macro differences on macOS / SwiftPM (`cxx17`). | Delays Phase 1 dictionary integration. | Isolate C++ behind `CHunspell.h` (`extern "C"`), pass explicit `cxxSettings` in `Package.swift`, and add bridge tests early in Phase 1. |
+| R-02 | `MenuBarExtra(.window)` in `LSUIElement` macOS apps dropping keyboard focus or `⌘V` / `⌘C` pasteboard shortcuts. | Breaks primary copy-paste UX in Phase 6. | Implement an explicit AppKit focus/window bridge (`NSStatusItem` + `NSPopover`/`NSPanel` or verified focus coordinator) and test live on macOS. |
+| R-03 | macOS 14–15 runtime compatibility is unverified on the macOS 27.2.1 host. | UI layout or material fallback regressions on older macOS releases. | Keep `#available(macOS 26.0, *)` guards clean and explicitly document unverified status in `README.md` until tested on macOS 14–15. |
+| R-04 | Short-word and English-Turkish collisions (e.g., `is`, `son`, `on`, `can`, `gun`) causing false positives. | Violates #1 "never break what is already correct" rule. | Enforce Bucket 2 conservative log-odds threshold, bundled English wordlist collision check, and build-time Wikidata Tier2A/2B cross-filtering. |
+| R-05 | Hunspell's 2-fold affix stripping limit rejecting valid agglutinative Turkish inflections. | Could trigger spurious edits if Hunspell rejection were treated as proof of error. | Enforce strict invariant: Hunspell rejection alone never triggers an error; only evaluate constrained ASCII diacritic candidates and known high-precision TDK rules. |
+
+---
+
+## Phase 0 Verification Notes
+
+- `swift build` — Passed (`exit 0`, 0 errors, 0 compiler warnings; built all 5 targets: `CHunspell`, `TitizCore`, `TitizEval`, `TitizApp`, `TitizCoreTests`).
+- `swift test` — Passed (`exit 0`, Swift Testing: 3 tests in 1 suite `"Titiz Bootstrap"` passed in 0.001 seconds; 0 failures).
+- `swift run TitizEval` — Passed (`exit 0`, printed `TitizCore version: 0.1.0-dev` and `CHunspell bridge version: 0.0.0-bootstrap`).
+- `SPEC.md` — Verified present and unmodified.

@@ -1,0 +1,35 @@
+# macOS metadata
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Swift Package Manager & Xcode build artifacts
+.build/
+/.swiftpm
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
+
+# Packaging & release outputs
+dist/
+build/
+*.app/
+*.dmg
+*.zip
+
+# Local held-out blind evaluation sets (never commit user blind sets)
+Datasets/blind_cases.json
+Datasets/*.local.json
+
+# Python offline data-generation helpers (Phases 3-4)
+.venv/
+__pycache__/
+*.pyc
+scripts/.cache/
+
+# Editor & IDE local files
+.vscode/
+*.swp
+*~
