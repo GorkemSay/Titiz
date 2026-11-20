@@ -45,10 +45,10 @@
 - [x] Update `Progress.md` with measured metrics, commit & push
 
 ### Phase 4 — 4-Tier Proper Noun Protection & Personal Dictionary
-- [ ] Build `scripts/build-wikidata-entities.py` (Wikidata CC0, high-notability filtering + build-time collision filtering against ASCII-folded `tr_TR.dic` and English wordlist -> `Tier2A`, `Tier2B`, `Tier3` resources)
-- [ ] Implement longest-match multi-word trie (`The Last of Us`), `Tier2B` context detector, and foreign-stem apostrophe suffix guard
-- [ ] Implement `Application Support/Titiz/personal_dictionary.json` store with immediate reload and highest precedence
-- [ ] Pass entity protection & collision unit tests + `TitizEval` entity retention >= 99% (100% Tier 1 / Tier 2A), update `Progress.md`, commit & push
+- [x] Build `scripts/build-wikidata-entities.py` (Wikidata CC0, high-notability filtering + build-time collision filtering against ASCII-folded `tr_TR.dic` and English wordlist -> `Tier2A`, `Tier2B`, `Tier3` resources)
+- [x] Implement longest-match multi-word trie (`The Last of Us`), `Tier2B` context detector, and foreign-stem apostrophe suffix guard
+- [x] Implement `Application Support/Titiz/personal_dictionary.json` store with immediate reload and highest precedence
+- [x] Pass entity protection & collision unit tests + `TitizEval` entity retention >= 99% (100% Tier 1 / Tier 2A), update `Progress.md`, commit & push
 
 ### Phase 5 — High-Precision Spelling Engine & Joint Combined Mode (`Düzelt`)
 - [ ] Implement `Resources/rules.json` (TDK citations, explanations, examples) and Swift spelling rules (punctuation spacing, `tr_TR` sentence-start capitalization, `mi/mı/mu/mü` separation, closed TDK list)
@@ -87,6 +87,8 @@
 | ADR-012 | 2026-11-19 | Add `chunspell_spell_batch` in `CHunspell` + `HunspellDictionary.containsBatch(_:assumeNFC:)` (32-item chunks, single lock acquisition) with intra-document caching (`mutableCount <= 7`). | Eliminates per-candidate lock and ICU NFC overhead across up to 128 dictionary probes, cutting 1,926-char Release p50 latency from 11.355 ms to 3.450 ms. |
 | ADR-013 | 2026-11-19 | Bundle 40,171-word English common+tech wordlist (`en_common_tech.txt` from MIT `jeremy-rifkin/Wordlist` + CC BY 4.0 Leipzig `eng_news_2020_100K` + curated tech terms) and `containsForeignStemWithTurkishSuffix(_:)` demoting English-stem + Turkish-suffix tokens (`loglarini`) from Bucket 1 to Bucket 2. | Prevents obscure `tr_TR.dic` entries (e.g., `loğ`) from corrupting code-switched Turkish technical terms. |
 | ADR-014 | 2026-11-19 | Build compact binary frequency table `tr_freq.bin` (150,000 unigrams + 337,054 ambiguity-filtered bigrams, 4.18 MiB) offline via `scripts/build-frequency-tables.py` from CC BY 4.0 Leipzig Turkish corpora (`tur_wikipedia_2021_300K` + `tur_news_2020_300K`, 8,065,855 tokens) with Lidstone smoothing and binary-search `TurkishFrequencyTable`. | Keeps Titiz 100% offline with compact storage and fast PMI-boosted Bucket 2 disambiguation. |
+| ADR-015 | 2026-11-20 | Cross-filter 4,765 Wikidata CC0 records via `scripts/build-wikidata-entities.py` into `tier2a_entities.txt` (1,078), `tier2b_entities.txt` (748), and `tier3_entities.txt` (1,967) against `tr_TR.dic` (exact + ASCII-folded) and `en_common_tech.txt`, preserving explicit proper-noun-only `tr_TR.dic` artifacts (`Atatürk`, `İstanbul`) and Leipzig news proper-noun allowlist (`Intel`, `Netflix`, `PlayStation`). | Prevents common Turkish/English collisions (`Can`, `It`, `Son`, `Su`, `Yol`, `Apple`, `Swift`, `Ordu`, `Van`) from entering `Tier2A` while ensuring canonical distinctive proper nouns remain protected at sentence start. |
+| ADR-016 | 2026-11-20 | Enforce strict `Tier 0 structural -> Tier 1 Personal Dictionary -> Tier 3 Longest-Match Trie -> Tier 2A -> Tier 2B` precedence in `ProperNounProtector`, backed by thread-safe lock-free-snapshot `PersonalDictionaryStore` (`~/Library/Application Support/Titiz/personal_dictionary.json`) and isolated per-case `additionalPersonalTerms` in `TitizEngine`/`EvalScorer`. | Guarantees immediate `"Bu adı hep koru"` precedence over all built-in tiers while keeping library/test/eval runs deterministic and isolated from local user preferences. |
 
 ---
 
@@ -106,6 +108,8 @@ Target gates (from `SPEC.md` Phase 2):
 | Phase 2 | `Datasets/dev_cases.json` (60 cases, pass-through baseline) | 0.00% (0/340); Clean: 0.00% (0/123) | 100.00% (48/48; T1: 3/3, T2A: 9/9) | Bucket 1: 0.00% (0/70); Overall: 0.00% (0/132) | N/A (0 edits) | 273c: 0.412 / 0.553 ms; 1926c: 1.955 / 2.441 ms |
 | Phase 3 (Character) | `Datasets/dev_cases.json` (20 `character` cases, Release) | 0.00% (0/78); Clean: 0.00% (0/45) | 100.00% (9/9; T2A: 1/1) | Bucket 1: 100.00% (37/37); Overall: 100.00% (44/44) | 100.00% (44/44) | Release: 273c 0.364 / 0.399 ms; 1926c 3.456 / 3.550 ms (Debug: 1.959 / 2.080 ms; 14.967 / 15.465 ms) |
 | Phase 3 (All 60 Dev) | `Datasets/dev_cases.json` (60 cases; Phase 4–5 rules pending) | 0.00% (0/340); Clean: 0.00% (0/123) | 100.00% (48/48; T1: 3/3, T2A: 9/9) | Bucket 1: 100.00% (70/70); Overall: 64.39% (85/132) | 96.59% (85/88) | Release: 273c 0.361 / 0.452 ms; 1926c 3.450 / 3.679 ms |
+| Phase 4 (Character) | `Datasets/dev_cases.json` (20 `character` cases, Release) | 0.00% (0/78); Clean: 0.00% (0/45) | 100.00% (9/9; T2A: 1/1) | Bucket 1: 100.00% (37/37); Overall: 100.00% (44/44) | 100.00% (44/44) | Release: 273c 0.374 / 0.482 ms; 1926c 3.414 / 5.288 ms |
+| Phase 4 (All 60 Dev) | `Datasets/dev_cases.json` (60 cases; Phase 5 spelling pending) | 0.00% (0/340); Clean: 0.00% (0/123) | 100.00% (48/48; T1: 3/3, T2A: 9/9) | Bucket 1: 100.00% (70/70); Overall: 64.39% (85/132) | 96.59% (85/88) | Release: 273c 0.373 / 0.406 ms; 1926c 3.308 / 3.470 ms |
 
 ---
 
@@ -160,4 +164,18 @@ Target gates (from `SPEC.md` Phase 2):
 - `swift run TitizEval --mode character --verbose` (Debug, 20 `character` cases) — Passed (`exit 0`, 20/20 exact match, FP 0.00% [0/78], Clean FP 0.00% [0/45], Retention 100.00% [9/9], Bucket 1 Recall 100.00% [37/37], Overall Recall 100.00% [44/44], Precision 100.00% [44/44]; Debug `.combined` latency: 273c p50=1.959 ms / p95=2.080 ms, 1926c p50=14.967 ms / p95=15.465 ms).
 - `swift run -c release TitizEval --mode character` (Release, 20 `character` cases) — Passed (`exit 0`, identical 100.00% quality metrics; Release `.combined` latency: 273c p50=0.364 ms / p95=0.399 ms [PASS], 1926c p50=3.456 ms / p95=3.550 ms [PASS]).
 - `swift run -c release TitizEval` (Release, all 60 cases) — Exited `0`, FP 0.00% [0/340], Clean FP 0.00% [0/123], Retention 100.00% [48/48; T1: 3/3, T2A: 9/9], Bucket 1 Recall 100.00% [70/70], Overall In-Scope Recall 64.39% [85/132] (Phases 4–5 spelling/combined rules pending), Precision 96.59% [85/88]; Release `.combined` latency: 273c p50=0.361 ms / p95=0.452 ms [PASS], 1926c p50=3.450 ms / p95=3.679 ms [PASS].
+- `SPEC.md` — Verified present and unmodified.
+
+## Phase 4 Verification Notes
+
+- **Wikidata CC0 Entity Bundles (`THIRD_PARTY_NOTICES.md` updated):**
+  - Generated via `scripts/build-wikidata-entities.py` from 4,765 Wikidata SPARQL (CC0 1.0) records + curated supplement, cross-filtered against `Sources/TitizCore/Resources/tr_TR.dic` and `en_common_tech.txt`:
+    - `Sources/TitizCore/Resources/tier2a_entities.txt`: 1,078 distinctive non-colliding entities (`Intel`, `Nvidia`, `Spotify`, `Netflix`, `PlayStation`, `Valorant`, `Atatürk`, `İstanbul`, etc.).
+    - `Sources/TitizCore/Resources/tier2b_entities.txt`: 748 context-gated colliding entities (`Can`, `It`, `Son`, `Su`, `Yol`, `Güneş`, `Swift`, `Apple`, `Deniz`, etc.).
+    - `Sources/TitizCore/Resources/tier3_entities.txt`: 1,967 multi-word entities (`The Last of Us`, `Red Dead Redemption`, `Visual Studio Code`, etc.).
+    - `Sources/TitizCore/Resources/wikidata_meta.json`: Build metadata and spec collision checks.
+- `swift build` — Passed (`exit 0`, 0 errors, 0 Swift compiler warnings).
+- `swift test` — Passed (`exit 0`, Swift Testing: 42 tests across 7 suites including `"4-Tier Proper Noun Protection & Personal Dictionary"` passed in 4.966 seconds; 0 failures).
+- `swift run -c release TitizEval --mode character` (Release, 20 `character` cases) — Passed (`exit 0`, 20/20 exact match, FP 0.00% [0/78], Clean FP 0.00% [0/45], Retention 100.00% [9/9], Bucket 1 Recall 100.00% [37/37], Overall Recall 100.00% [44/44], Precision 100.00% [44/44]; Release `.combined` latency: 273c p50=0.374 ms / p95=0.482 ms [PASS], 1926c p50=3.414 ms / p95=5.288 ms [PASS]).
+- `swift run -c release TitizEval` (Release, all 60 cases) — Exited `0`, FP 0.00% [0/340], Clean FP 0.00% [0/123], Retention 100.00% [48/48: tier0 21/21, tier1 3/3, tier2A 9/9, tier2B 5/5, tier3 3/3, foreign_term 7/7], Bucket 1 Recall 100.00% [70/70], Overall In-Scope Recall 64.39% [85/132] (Phase 5 spelling/combined rules pending), Precision 96.59% [85/88]; Release `.combined` latency: 273c p50=0.373 ms / p95=0.406 ms [PASS], 1926c p50=3.308 ms / p95=3.470 ms [PASS].
 - `SPEC.md` — Verified present and unmodified.

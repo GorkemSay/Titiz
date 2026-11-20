@@ -13,7 +13,7 @@ Titiz bundles and incorporates open-source software, linguistic dictionaries, de
 | Turkish Deasciifier GPA decision-list algorithm & pattern table (`gpa_patterns.json`) | `Sources/TitizCore/CharacterEngine/` & `Resources/` | `https://github.com/denizyuret/deasciify` | `master` (`9d44765ed722c597e631824bba423bd5de17559a`, 2016-01-14) | MIT | Integrated — Phase 3 |
 | Bundled English common & technical wordlist (`en_common_tech.txt`) | `Sources/TitizCore/Resources/` | `jeremy-rifkin/Wordlist` + Leipzig `eng_news_2020_100K` | `df67e6e28bc9c8771816846a962500ec20fa5cfd` (2020-11-10) + `eng_news_2020_100K` | MIT & CC BY 4.0 | Integrated — Phase 3 |
 | Turkish unigram & quantized bigram frequency tables (`tr_freq.bin`) | `Sources/TitizCore/Resources/` | Leipzig Corpora Collection (`tur_wikipedia_2021_300K`, `tur_news_2020_300K`) | `2021_300K` & `2020_300K` | CC BY 4.0 | Integrated — Phase 3 |
-| Collision-filtered entity bundles (`Tier2A`, `Tier2B`, `Tier3`) | `Sources/TitizCore/Resources/` | Wikidata (generated offline via `scripts/build-wikidata-entities.py`) | TBD (Phase 4) | CC0 1.0 | Planned — Phase 4 |
+| Collision-filtered entity bundles (`Tier2A`, `Tier2B`, `Tier3`) | `Sources/TitizCore/Resources/` | Wikidata Query Service (`https://query.wikidata.org/sparql`) + `scripts/build-wikidata-entities.py` | Generated 2026-11-20 (`tier2a_entities.txt`: 1,078; `tier2b_entities.txt`: 748; `tier3_entities.txt`: 1,967) | CC0 1.0 | Integrated — Phase 4 |
 
 ---
 
@@ -146,5 +146,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 - **Citation:** Dirk Goldhahn, Thomas Eckart, and Uwe Quasthoff. "Building Large Monolingual Dictionaries at the Leipzig Corpora Collection: From 100 to 200 Languages." *Proceedings of the Eighth International Conference on Language Resources and Evaluation (LREC'12)*, pp. 759–765, 2012.
 
 ### 6. Wikidata Entity Bundles (`Tier2A`, `Tier2B`, `Tier3`)
-- *Status:* Planned (Phase 4).
-- *Notice:* Pending offline generation under CC0 1.0.
+- **Status:** Integrated (Phase 4).
+- **Upstream Source:** Wikidata Query Service (`https://query.wikidata.org/sparql`), Wikimedia Foundation (snapshot fetched 2026-11-20, 4,765 structured entity records across countries, cities/Turkish provinces, tech brands/software, games/media, Turkish institutions, and notable figures) + collision filtering and curated supplement via `scripts/build-wikidata-entities.py`.
+- **Embedded Files:** `Sources/TitizCore/Resources/tier2a_entities.txt` (1,078 non-colliding entities), `Sources/TitizCore/Resources/tier2b_entities.txt` (748 colliding entities), `Sources/TitizCore/Resources/tier3_entities.txt` (1,967 multi-word entities), and `Sources/TitizCore/Resources/wikidata_meta.json`.
+- **License:** Creative Commons Zero v1.0 Universal (`CC0-1.0`, `https://creativecommons.org/publicdomain/zero/1.0/`).
+
+```text
+CC0 1.0 Universal (Public Domain Dedication)
+
+All structured data in Wikidata is available under the Creative Commons CC0 License.
+The person who associated a work with this deed has dedicated the work to the public
+domain by waiving all of his or her rights to the work worldwide under copyright law,
+including all related and neighboring rights, to the extent allowed by law.
+```

@@ -12,13 +12,16 @@ public struct TitizEngine: Sendable {
     }
 
     public let resources: TitizResources
+    public let personalDictionaryStore: PersonalDictionaryStore
     private let characterEngine: CharacterEngine
 
     public init(
         resources: TitizResources = .shared,
+        personalDictionaryStore: PersonalDictionaryStore = PersonalDictionaryStore(),
         characterConfig: CharacterEngineConfiguration = .default
     ) {
         self.resources = resources
+        self.personalDictionaryStore = personalDictionaryStore
         self.characterEngine = CharacterEngine(
             dictionary: resources.dictionary,
             gpaScorer: resources.gpaScorer,
@@ -28,17 +31,38 @@ public struct TitizEngine: Sendable {
         )
     }
 
-    /// Runs Phase 1 UTF-8 NFC normalization, structural lexing, and Tier 0 protection.
-    public func analyze(_ text: String) -> AnalyzedDocument {
+    /// Runs UTF-8 NFC normalization, structural lexing, and 4-tier proper-noun protection (Tier 0–3).
+    public func analyze(_ text: String, additionalPersonalTerms: [String] = []) -> AnalyzedDocument {
         let normalized = TextNormalizer.normalize(text)
         let lexed = StructuralLexer.tokenize(normalized)
-        let protectedTokens = Tier0Protector.apply(to: lexed)
+        let tier0Protected = Tier0Protector.apply(to: lexed)
+
+        let baseSnapshot = personalDictionaryStore.snapshot
+        let effectiveSnapshot: PersonalDictionarySnapshot
+        if additionalPersonalTerms.isEmpty {
+            effectiveSnapshot = baseSnapshot
+        } else {
+            let extraEntries = additionalPersonalTerms.map { PersonalDictionaryEntry(term: $0, isCaseSensitive: true) }
+            effectiveSnapshot = PersonalDictionarySnapshot(entries: baseSnapshot.entries + extraEntries)
+        }
+
+        let protectedTokens = ProperNounProtector.apply(
+            to: tier0Protected,
+            personalDictionary: effectiveSnapshot,
+            gazetteer: resources.gazetteer,
+            englishWordlist: resources.englishWordlist,
+            dictionary: resources.dictionary
+        )
         return AnalyzedDocument(normalized: normalized, tokens: protectedTokens)
     }
 
     /// Processes input text under the specified correction mode.
-    public func correct(_ text: String, mode: CorrectionMode = .combined) -> CorrectionResult {
-        let analyzed = analyze(text)
+    public func correct(
+        _ text: String,
+        mode: CorrectionMode = .combined,
+        additionalPersonalTerms: [String] = []
+    ) -> CorrectionResult {
+        let analyzed = analyze(text, additionalPersonalTerms: additionalPersonalTerms)
 
         switch mode {
         case .character:
@@ -51,7 +75,7 @@ public struct TitizEngine: Sendable {
                 mode: .spelling
             )
         case .combined:
-            // Phase 4 adds Tier 1-3 protection and Phase 5 adds Spelling + Joint split-and-deasciify.
+            // Phase 5 adds Spelling + Joint split-and-deasciify.
             let charResult = characterEngine.process(analyzed)
             return CorrectionResult(
                 originalText: charResult.originalText,

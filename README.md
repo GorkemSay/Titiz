@@ -113,7 +113,7 @@ GitHub Releases üzerinden dağıtılan imzasız `Titiz.app` paketini ilk kez a�
 | Faz 1 | Gömülü Hunspell (`CHunspell`), NFC/`tr_TR`, Lexer ve Tier 0 koruma | Tamamlandı |
 | Faz 2 | `TitizEval` ölçüm aracı ve veri kümesi altyapısı | Tamamlandı |
 | Faz 3 | 3 kovalı Karakter Motoru ve istatistiksel ayrıştırıcı | Tamamlandı |
-| Faz 4 | 4 katmanlı özel ad koruması ve Kişisel Sözlük | Planlandı |
+| Faz 4 | 4 katmanlı özel ad koruması ve Kişisel Sözlük | Tamamlandı |
 | Faz 5 | Yüksek hassasiyetli Yazım Motoru ve birleşik `Düzelt` modu | Planlandı |
 | Faz 6 | Yerel macOS Menü Çubuğu arayüzü (`TitizApp` — Liquid Glass) | Planlandı |
 | Faz 7 | Paketleme betiği (`Titiz.app`, `.zip`/`.dmg`) ve son kontroller | Planlandı |

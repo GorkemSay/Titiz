@@ -79,20 +79,31 @@ struct StructuralLexerAndTier0Tests {
         #expect(pronounO?.isProtected == false)
     }
 
-    @Test("Apostrophe-inflected TitleCase words split stem and suffix without false Tier 0 triggers")
+    @Test("Apostrophe-inflected TitleCase words split stem and suffix cleanly without false Tier 0 triggers")
     func apostropheWords() {
-        let doc = engine.analyze("Intel'den ve Intel’den haber geldi.")
-        let apostropheTokens = doc.tokens.filter {
+        let normalized = TextNormalizer.normalize("Intel'den ve Intel’den haber geldi.")
+        let tier0Doc = Tier0Protector.apply(to: StructuralLexer.tokenize(normalized))
+        let tier0Apostrophes = tier0Doc.filter {
             if case .apostropheWord = $0.kind { return true }
             return false
         }
 
-        #expect(apostropheTokens.count == 2)
-        #expect(apostropheTokens[0].kind == .apostropheWord(stem: "Intel", apostrophe: "'", suffix: "den"))
-        #expect(apostropheTokens[1].kind == .apostropheWord(stem: "Intel", apostrophe: "’", suffix: "den"))
-        // TitleCase "Intel" awaits Tier 2A protection in Phase 4 rather than false CamelCase Tier 0
-        #expect(!apostropheTokens[0].isProtected)
-        #expect(!apostropheTokens[1].isProtected)
+        #expect(tier0Apostrophes.count == 2)
+        #expect(tier0Apostrophes[0].kind == .apostropheWord(stem: "Intel", apostrophe: "'", suffix: "den"))
+        #expect(tier0Apostrophes[1].kind == .apostropheWord(stem: "Intel", apostrophe: "’", suffix: "den"))
+        // Tier 0 itself does not misclassify TitleCase "Intel" as CamelCase
+        #expect(!tier0Apostrophes[0].isProtected)
+        #expect(!tier0Apostrophes[1].isProtected)
+
+        // Full Phase 4 analysis protects "Intel'den" as Tier 2A
+        let analyzed = engine.analyze("Intel'den ve Intel’den haber geldi.")
+        let analyzedApostrophes = analyzed.tokens.filter {
+            if case .apostropheWord = $0.kind { return true }
+            return false
+        }
+        #expect(analyzedApostrophes.count == 2)
+        #expect(analyzedApostrophes[0].protection?.tier == .tier2ANonCollidingEntity)
+        #expect(analyzedApostrophes[1].protection?.tier == .tier2ANonCollidingEntity)
     }
 
     @Test("URLs, emails, handles, hashtags, code spans, and file paths are Tier 0 protected")

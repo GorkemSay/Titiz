@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "1.0.0",
+  "source": "Wikidata CC0 1.0 (https://query.wikidata.org/sparql) + curated canonical supplement",
+  "license": "CC0-1.0",
+  "collisionFilters": [
+    "Sources/TitizCore/Resources/tr_TR.dic (exact & ASCII-folded)",
+    "Sources/TitizCore/Resources/en_common_tech.txt",
+    "COMMON_WORD_SAFETY_BLOCKLIST"
+  ],
+  "counts": {
+    "tier2A": 1078,
+    "tier2B": 748,
+    "tier3": 1967
+  },
+  "specCheck": {
+    "tier2A_present": [
+      "Intel",
+      "Nvidia",
+      "Spotify",
+      "Netflix",
+      "PlayStation",
+      "Valorant",
+      "Atatürk",
+      "İstanbul"
+    ],
+    "tier2B_present": [
+      "Can",
+      "It",
+      "Son",
+      "Su",
+      "Yol",
+      "Güneş",
+      "Swift",
+      "Apple",
+      "Deniz"
+    ],
+    "tier3_present": [
+      "The Last of Us",
+      "Red Dead Redemption",
+      "Visual Studio Code"
+    ]
+  }
+}

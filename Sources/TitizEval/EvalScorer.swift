@@ -180,7 +180,11 @@ public enum EvalScorer {
         } ?? dataset.cases
 
         let evaluated = filteredCases.map { testCase -> (CaseEvaluation, [String: TierRetentionCounts]) in
-            let result = engine.correct(testCase.input, mode: testCase.mode)
+            let result = engine.correct(
+                testCase.input,
+                mode: testCase.mode,
+                additionalPersonalTerms: testCase.personalDictionary ?? []
+            )
             return scoreCase(testCase, actual: result.correctedText)
         }
 
