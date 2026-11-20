@@ -8,97 +8,48 @@
 
 ---
 
-## Proje Amacı
+## Uygulama Amacı
 
-İngilizce (QWERTY) klavyeyle Türkçe yazarken eksik kalan Türkçe karakterleri (`ç, ğ, ı, İ, ö, ş, ü`) ve sık yapılan açık yazım/noktalama hatalarını **tamamen çevrimdışı**, **deterministik** ve **milisaniyeler içinde** düzelten yerel bir macOS menü çubuğu uygulamasıdır.
+**Titiz**, İngilizce (QWERTY) klavyeyle Türkçe yazarken eksik kalan Türkçe karakterleri (`ç, ğ, ı, İ, ö, ş, ü`) ve sık yapılan açık yazım/noktalama hatalarını **tamamen çevrimdışı**, **deterministik** ve **milisaniyeler içinde** düzelten yerel bir macOS menü çubuğu uygulamasıdır.
 
-- **%100 Çevrimdışı ve Gizlilik Odaklı:** Hesap yok, API anahtarı yok, telemetri yok, bulut çağrısı veya yapay zeka (LLM) servisi yok. Tüm metinler yalnızca kendi Mac'inizde işlenir.
-- **Hızlı Menü Çubuğu Akışı:** Menü çubuğundan açın, metni yapıştırın (`⌘V`), **"Düzelt"** (`⌘↩`) butonuna basın, isterseniz satır içi değişiklikleri inceleyin ve sonucu kopyalayın (`⌘⇧C`).
-- **Son 5 Geçmiş:** Son 5 düzeltme Mac'inizde yerel olarak saklanır ve dilediğiniz zaman tek tıkla yeniden kopyalanabilir.
-- **İsteğe Bağlı Manuel Güncelleme Denetimi:** Uygulama açılışta veya metin düzeltirken arka planda hiçbir ağ çağrısı yapmaz; yalnızca Ayarlar ekranındaki **"Güncellemeleri Denetle"** butonuna tıkladığınızda GitHub Releases üzerinden yeni sürüm kontrol edilir ve varsa tek tıkla yüklenir.
+Menü çubuğundan açıp metni yapıştırın (`⌘V`), **"Düzelt"** (`⌘↩`) düğmesine basın ve sonucu kopyalayın (`⌘⇧C`):
 
----
-
-## Temel İlke: "Doğru Olanı Bozmamak"
-
-Titiz'in en öncelikli mühendislik kuralı **hassasiyeti (precision) her zaman kapsamın (recall) önünde tutmaktır**. Bağlam belirsizse uygulama tahmin yürütmek yerine özgün metni korur.
-
-- **Hedef örnek:**
-  - Girdi: `Dune Part Three 18 Aralik'ta cikiyor ama ayni gun gitsem mi bilemedim ne dersin?`
-  - Çıktı: `Dune Part Three 18 Aralık'ta çıkıyor ama aynı gün gitsem mi bilemedim ne dersin?`
-  - (`Dune Part Three` yabancı özel ad/film başlığı ve `18` sayısı korunur; `Aralik'ta → Aralık'ta`, `cikiyor → çıkıyor`, `ayni → aynı` ve bağlama bağlı `gun → gün` güvenle düzeltilir, doğru yazılmış `gitsem mi` bozulmaz.)
-- **Özel Adlar ve Teknik Terimler:** `Intel` cümle başında bile `Intel` olarak kalır (asla `İntel` olmaz). `driver`, `feedback`, `"Search"` gibi İngilizce ve teknik ifadeler olduğu gibi korunur.
-- **Üsluba Dokunmaz:** Metni yeniden yazmaz veya anlamı değiştirmez (`Gönder` hiçbir zaman `gönderin` yapılmaz).
-- **Yabancı Kök + Türkçe Ek Koruması:** `Apple'da`, `iPhone'u`, `GitHub'ta` gibi okunuşa göre gelen Türkçe eklerin ünlü uyumu otomatik değiştirilmez. `loglarini` gibi yabancı kök + ek birleşimleri belirsizse dokunulmadan bırakılır.
-- **Kişisel Sözlük ("Bu adı hep koru"):** Herhangi bir sözcüğü veya çok sözcüklü ifadeyi (`MaviKutu`, `Yeni Proje X` vb.) seçip **"Bu adı hep koru"** diyerek anında koruma altına alabilirsiniz. Kişisel Sözlük tüm yerleşik varlık listelerinden daha yüksek önceliğe sahiptir.
+- **Örnek:**
+  - **Girdi:** `Dune Part Three 18 Aralik'ta cikiyor ama ayni gun gitsem mi bilemedim ne dersin?`
+  - **Çıktı:** `Dune Part Three 18 Aralık'ta çıkıyor ama aynı gün gitsem mi bilemedim ne dersin?`
+  - *(`Dune Part Three` film başlığı ve `18` korunur; `Aralik'ta → Aralık'ta`, `cikiyor → çıkıyor`, `ayni → aynı` ve bağlama bağlı `gun → gün` düzeltilir, doğru yazılmış `gitsem mi` olduğu gibi bırakılır.)*
 
 ---
 
-## Üç Çalışma Modu
+## Neden Titiz?
 
-1. **`Türkçe karakterler` (Karakter Modu):**
-   - Yalnızca ASCII harflerden (`c, g, i, o, s, u`) eksik Türkçe karakterleri (`ç, ğ, ı, İ, ö, ş, ü`) geri yükler (`yarin disari cikacagim → yarın dışarı çıkacağım`).
-   - Halihazırda metinde bulunan Türkçe karakterleri asla bozmaz veya geri almaz (tek yönlü garanti). Büyük/küçük harf, noktalama veya sözcük ayırma yapmaz.
-2. **`Yazım ve noktalama` (Yazım ve Noktalama Modu):**
-   - Yüksek güvenli, deterministik TDK yazım ve noktalama düzeltmelerini uygular (`Bugün toplantı varmı ? → Bugün toplantı var mı?`).
-   - **v1 Kapsamı:** Noktalama boşlukları (`? ! , . ; :` öncesi/sonrası; URL, ondalık sayı, kısaltma ve saat ifadeleri hariç), `tr_TR` yerel ayarıyla cümle başı büyük harf (korunan özel adlar hariç), soru eki `mi/mı/mu/mü` ve çekimli eklerinin ayrılması (`ekonomi`, `samimi`, `resmi`, `kimi`, `yirmi`, `acemi`, `ilmi`, `daimi` gibi sözcükler korunarak) ve kapalı küme kesin TDK düzeltmeleri (`herşey → her şey`, `birşey → bir şey`, `hiçbirşey → hiçbir şey`, `herkez → herkes`, `yanlız → yalnız`, `yalnış → yanlış`, `sağol → sağ ol`, `hoşçakal → hoşça kal`, `ardarda → art arda`).
-   - **v1 Otomatik Düzeltme Kapsamı Dışı:** Sözdizimsel/anlamsal `de/da`, `ki` ve `kar/kâr` otomatik değişiklikleri hassasiyeti korumak amacıyla v1 kapsamı dışındadır.
-3. **`Düzelt` (Birleşik Mod — Varsayılan Tek Tık Eylemi):**
-   - Karakter ve Yazım motorlarını birlikte çalıştırır; ayrıca bitişik yazılmış ASCII soru ekleri ve kapalı bileşiklerde **birleşik ayırma ve Türkçe karakter tamamlama** (*joint split-and-deasciify*) uygular (`ciktimi → çıktı mı`, `varmi → var mı`, `gordunmu → gördün mü`, `hersey → her şey`).
+Metni baştan yazan veya internete gönderen üretken yapay zeka araçlarının ve katı sözlük denetleyicilerinin aksine Titiz, gündelik teknik/profesyonel Türkçe yazımı için tasarlanmıştır:
 
----
-
-## Mimari
-
-Titiz, harici `.xcodeproj` dosyası olmadan saf **Swift Package Manager (`Package.swift`)** ile modüler olarak yapılandırılmıştır:
-
-```text
-Titiz
-├── Sources/TitizApp          # macOS Menü Çubuğu SwiftUI arayüzü (Liquid Glass + AppKit odak köprüsü)
-├── Sources/TitizCore         # Saf Swift, AppKit bağımsız deterministik düzeltme motoru
-│   ├── Pipeline/             # UTF-8 NFC normalizasyonu, tr_TR locale, yapısal lexer, birleşik akış
-│   ├── Protection/           # 4 katmanlı koruma (Tier 0-3), çok sözcüklü trie, Kişisel Sözlük
-│   ├── CharacterEngine/      # 3 kovalı aday sınıflandırıcı, tek yönlü GPA skorlayıcı, n-gram ayrıştırıcı
-│   ├── SpellingEngine/       # TDK kuralları, joint split-and-deasciify, rules.json
-│   └── Models & Resources/   # Modeller, tr_TR.dic/aff, sözlük ve frekans tabloları
-├── Sources/CHunspell         # Gömülü C/C++ Hunspell motoru ve C köprü başlığı
-├── Sources/TitizEval         # Geliştirme ve kör test seti ölçüm/gecikme CLI aracı
-├── Tests/TitizCoreTests      # Birim ve regresyon test paketleri
-├── assets/                   # Özel macOS uygulama simgesi (AppIcon.icns) ve README logosu
-└── scripts/                  # Çevrimdışı varlık üretimi, simge ve Titiz.app paketleme betikleri
-```
+- **"Doğru Olanı Bozmama" Garantisi:** Hassasiyeti (precision) her zaman kapsamın (recall) önünde tutar. Belirsiz sözcüklerde tahmin yürütmez; özgün hâlini korur ve olası alternatifleri tıklanabilir öneri olarak sunar. Üsluba, kip veya cümle yapısına asla müdahale etmez (`Gönder` hiçbir zaman `gönderin` yapılmaz).
+- **%100 Çevrimdışı ve Anlık Hız:** Hesap, API anahtarı, telemetri veya bulut çağrısı yoktur. Tüm metinler yalnızca kendi Mac'inizde işlenir (kısa metinlerde **< 1 ms**, uzun metinlerde **~7 ms**). İsteğe bağlı sürüm kontrolü yalnızca Ayarlar içindeki **"Güncellemeleri Denetle"** düğmesine bastığınızda GitHub Releases üzerinden yapılır.
+- **4 Katmanlı Akıllı Koruma:** URL'ler, dosya yolları, kod tanımlayıcıları (`TitizNSTextView`, `MaviKutu`), kısaltmalar (`API'ye`, `JSON`), İngilizce teknik terimler (`driver`, `container`, `"Check for Updates"`), marka/özel adlar (`Intel`, `Netflix`, `Can Bey`) ve yabancı köke gelen Türkçe ekler (`Apple'da`, `Docker'dan`, `GitHub'ta`) otomatik korunur; Türkçe özel adlar ise (`Istanbul'dan → İstanbul'dan`, `Aralik'ta → Aralık'ta`) güvenle onarılır.
+- **Kişisel Sözlük ("Bu adı hep koru"):** Herhangi bir marka, ürün veya proje adını (`Yeni Proje X`, `MaviKutu`) seçip **"Bu adı hep koru"** diyerek anında en yüksek öncelikli koruma katmanına ekleyebilirsiniz.
+- **Şeffaf TDK Gerekçesi ve Bağımsız Geri Al:** Düzenlenen her sözcüğe tıklayarak uygulanan TDK/karakter kuralını ve açıklamasını görebilir, tek tıkla **"Geri Al"** diyebilir veya son 5 düzeltmenize yerel geçmişten ulaşabilirsiniz.
+- **Saf Yerel macOS Deneyimi:** Electron veya tarayıcı tabanlı ağır çerçeveler yerine Swift, AppKit ve SwiftUI (`macOS 26+` için Liquid Glass) ile yazılmıştır; menü çubuğunda hafifçe ve sessizce çalışır.
 
 ---
 
-## Derleme, Geliştirme ve Paketleme
+## Çalışma Modları
 
-Gereksinimler: macOS (Apple Silicon / Intel), Xcode ve Swift 6+. Harici Node.js veya Python çalışma zamanı son kullanıcılar için gerekmez.
-
-```bash
-git clone https://github.com/GorkemSay/Titiz.git
-cd Titiz
-
-# Tüm hedefleri derle
-swift build
-
-# Birim ve regresyon testlerini çalıştır
-swift test
-
-# Değerlendirme CLI aracını çalıştır (Release + eşik doğrulaması)
-swift run -c release TitizEval --enforce-gates
-
-# Menü çubuğu uygulamasını geliştirme modunda başlat
-swift run TitizApp
-
-# Bağımsız Titiz.app, .zip ve .dmg dağıtım paketlerini oluştur (dist/ altında)
-./scripts/bundle-app.sh
-```
+1. **`Karakter`:**
+   - Yalnızca ASCII harflerden (`c, g, i, o, s, u`) eksik Türkçe karakterleri (`ç, ğ, ı, İ, ö, ş, ü`) **tek yönlü** olarak tamamlar (`yarin disari cikacagim → yarın dışarı çıkacağım`).
+   - Metinde zaten bulunan Türkçe karakterleri bozmaz; büyük/küçük harf, noktalama veya sözcük ayırma yapmaz.
+2. **`Yazım`:**
+   - Yüksek güvenli TDK yazım ve noktalama kurallarını uygular: noktalama boşlukları (`? ! , . ; :`; URL, ondalık sayı, saat ve kısaltmalar korunarak), `tr_TR` cümle başı büyük harf, cümle ortası tümcecik bağlamı dahil `mi/mı/mu/mü` soru eki ayrımı (`sence doğrumu yapıyorum? → sence doğru mu yapıyorum?`, iyelik ekleri korunarak) ve kapalı küme kesin TDK düzeltmeleri (`herşey → her şey`, `birşey → bir şey`, `hiçbirşey → hiçbir şey`, `herkez → herkes`, `yanlız → yalnız`, `yalnış → yanlış`, `sağol → sağ ol`, `hoşçakal → hoşça kal`, `ardarda → art arda`).
+   - *v1 Kapsam Sınırı:* Sözdizimsel/anlamsal `de/da`, `ki` ve `kar/kâr` ayrımları yanlış düzeltmeleri sıfırda tutmak için otomatik kapsam dışındadır.
+3. **`Çift Mod` *(Varsayılan)*:**
+   - `Karakter` ve `Yazım` motorlarını bir arada çalıştırır; ek olarak bitişik ASCII soru ekleri ve TDK bileşiklerinde tek adımda ayırma ve karakter onarımı uygular (`ciktimi → çıktı mı`, `kotumu gorunuyor? → kötü mü görünüyor?`, `hersey → her şey`).
 
 ---
 
-## Ölçülen Kalite ve Gecikme Sonuçları (`TitizEval`)
+## Ölçülen Kalite ve Performans (`TitizEval`)
 
-60 geliştirme/regresyon vakası (`Datasets/dev_cases.json`) üzerinde `Release` derleme sonuçları:
+60 geliştirme ve regresyon vakası (`Datasets/dev_cases.json`) üzerinde `Release` derleme sonuçları:
 
 | Ölçüt | Hedef | Ölçülen Sonuç |
 | --- | --- | --- |
@@ -106,45 +57,53 @@ swift run TitizApp
 | Özel Ad ve Yabancı Terim Koruması | `>= %99,00` (`Tier 1/2A: %100`) | **`%100,00` (48/48)** |
 | Gerçek Hata Yakalama (`Bucket 1` / Genel) | `>= %92,00` / `>= %75,00` | **`%100,00` (70/70)** / **`%99,24` (131/132)** |
 | Düzeltme Kesinliği (*Edit Precision*) | `>= %95,00` | **`%100,00` (131/131)** |
-| Gecikme `p50 / p95` (273 krk. / 1.926 krk.) | `< 10 ms` / `< 25–80 ms` | **`0,626 / 0,678 ms`** · **`5,719 / 7,366 ms`** |
+| Gecikme `p50 / p95` (273 krk. / 1.926 krk.) | `< 10 ms` / `< 25–80 ms` | **`0,702 / 0,847 ms`** · **`6,869 / 7,426 ms`** |
 
 ---
 
-## macOS Sürüm Uyumluluğu ve Simge Notu
+## Kurulum ve İlk Açılış (Gatekeeper)
 
-- `Package.swift` dosyası dağıtım hedefini `macOS(.v14)` olarak tanımlar. macOS 26 ve üzeri sistemlerde `#available(macOS 26.0, *)` ile yerel Apple Liquid Glass API'leri, macOS 14–15 sistemlerde ise `.ultraThinMaterial` / `.regularMaterial` uyumlu görsel katman kullanılır.
-- **Uyumluluk Notu:** macOS 14–15 çalışma zamanı uyumluluğu hedeflenmektedir; ancak doğrudan macOS 14 ve 15 ortamlarında doğrulanana kadar test edilmemiş kabul edilmelidir.
-- **Uygulama Simgesi:** Titiz; macOS yuvarlatılmış kare (*squircle*) formunda kırık bordo (`#702D38`) zemin üzerine, içe kıvrılan çift İyonik volütleri **T** harfinin yatay başlığını oluşturan kırık mermer beyazı (`#EFEAE1`) Yunan sütunu amblemini kullanır ([assets/titiz-logo.png](assets/titiz-logo.png), [assets/AppIcon.icns](assets/AppIcon.icns) ve [scripts/generate-icon.swift](scripts/generate-icon.swift)). Menü çubuğunda ise küçük boyut okunaklılığını korumak için sade tek renkli `T` şablon simgesi yer alır.
+GitHub Releases üzerinden indirdiğiniz `Titiz.app` paketini açarken macOS Gatekeeper ad-hoc imza uyarısı gösterebilir:
 
----
+1. `Titiz.app` uygulamasını **Uygulamalar (`Applications`)** klasörüne sürükleyin.
+2. Uygulamayı bir kez açmayı deneyip uyarı penceresini kapatın.
+3. **Sistem Ayarları → Gizlilik ve Güvenlik** ekranının altındaki **"Yine de Aç"** düğmesiyle onaylayın.
 
-## macOS 15+ İmzasız Uygulama Açma (Gatekeeper)
-
-GitHub Releases üzerinden dağıtılan ad-hoc imzalı/imzasız `Titiz.app` paketini ilk kez açarken macOS Gatekeeper güvenlik uyarısı gösterebilir:
-
-1. `Titiz.app` dosyasını **Uygulamalar (`Applications`)** klasörüne taşıyın.
-2. Uygulamayı açmayı bir kez deneyin ve uyarı penceresini kapatın.
-3. **Sistem Ayarları → Gizlilik ve Güvenlik** bölümünü açın.
-4. Alt kısımda görünen `Titiz` engelleme mesajının yanındaki **"Yine de Aç"** düğmesine tıklayıp onaylayın.
+> **macOS Sürüm Uyumluluğu:** `Package.swift` hedefi `macOS(.v14)` olarak tanımlıdır. macOS 26 ve üzerinde yerel Liquid Glass API'leri, macOS 14–15 sistemlerde `.ultraThinMaterial` / `.regularMaterial` uyumlu görsel katman kullanılır. (macOS 14–15 ortamları için çalışma zamanı uyumluluğu hedeflense de doğrudan o sürümlerde test edilene kadar doğrulanmamış kabul edilmelidir.)
 
 ---
 
-## Yol Haritası
+## Mimari ve Geliştirme
 
-| Faz | Kapsam | Durum |
-| --- | --- | --- |
-| Faz 0 | Depo kurulumu, dokümantasyon ve SwiftPM iskeleti | Tamamlandı |
-| Faz 1 | Gömülü Hunspell (`CHunspell`), NFC/`tr_TR`, Lexer ve Tier 0 koruma | Tamamlandı |
-| Faz 2 | `TitizEval` ölçüm aracı ve veri kümesi altyapısı | Tamamlandı |
-| Faz 3 | 3 kovalı Karakter Motoru ve istatistiksel ayrıştırıcı | Tamamlandı |
-| Faz 4 | 4 katmanlı özel ad koruması ve Kişisel Sözlük | Tamamlandı |
-| Faz 5 | Yüksek hassasiyetli Yazım Motoru ve birleşik `Düzelt` modu | Tamamlandı |
-| Faz 6 | Yerel macOS Menü Çubuğu arayüzü (`TitizApp` — Liquid Glass) | Tamamlandı |
-| Faz 7 | Paketleme betiği (`Titiz.app`, `.zip`/`.dmg`) ve son kontroller | Tamamlandı |
+Harici `.xcodeproj` gerektirmeden saf **Swift Package Manager (`Package.swift`)** ile yapılandırılmıştır:
+
+```text
+Titiz
+├── Sources/TitizApp          # macOS Menü Çubuğu arayüzü (SwiftUI + AppKit odak/editör köprüsü + AppUpdater)
+├── Sources/TitizCore         # Saf Swift deterministik düzeltme motoru (NFC, Tier 0–3, Karakter, Yazım, TDK)
+├── Sources/CHunspell         # Gömülü C/C++ Hunspell motoru ve C köprü başlığı
+├── Sources/TitizEval         # Geliştirme ve kör test seti ölçüm/gecikme CLI aracı
+├── Tests/TitizCoreTests      # Birim ve regresyon test paketleri
+├── assets/                   # İyonik sütun `T` macOS uygulama simgesi (`AppIcon.icns`) ve logo (`titiz-logo.png`)
+└── scripts/                  # Çevrimdışı sözlük, simge ve `Titiz.app` / `.zip` / `.dmg` paketleme betikleri
+```
+
+Gereksinimler: macOS, Xcode ve Swift 6+ (son kullanıcı paketi harici Python/Node.js gerektirmez).
+
+```bash
+git clone https://github.com/GorkemSay/Titiz.git
+cd Titiz
+
+swift build                                  # Tüm hedefleri derle
+swift test                                   # Birim ve regresyon testlerini çalıştır (52/52)
+swift run -c release TitizEval --enforce-gates  # Kalite ve gecikme kapılarını doğrula
+swift run TitizApp                           # Geliştirme modunda menü çubuğu uygulamasını başlat
+./scripts/bundle-app.sh                      # dist/ altında Titiz.app, .zip ve .dmg paketlerini üret
+```
 
 ---
 
 ## Lisans ve Üçüncü Taraf Bileşenler
 
 - Titiz kaynak kodu **MIT Lisansı** ile lisanslanmıştır ([LICENSE](LICENSE)).
-- Gömülü sözlükler, algoritmalar ve açık veri kümelerinin lisans ve atıf bilgileri [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) dosyasında tutulmaktadır.
+- Gömülü sözlükler, istatistiksel modeller ve açık veri kümelerinin lisans ve atıf bilgileri [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) dosyasında yer alır.
