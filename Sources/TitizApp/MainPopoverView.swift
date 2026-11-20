@@ -120,10 +120,8 @@ struct MainPopoverView: View {
     @ViewBuilder
     private var headerBar: some View {
         HStack(spacing: 12) {
-            HStack(spacing: 6) {
-                Image(systemName: "text.badge.checkmark")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(TitizBrandColors.burgundyHighlight)
+            HStack(spacing: 7) {
+                TitizLogoBadge(size: 22)
 
                 Text("Titiz")
                     .font(.system(.headline, weight: .semibold))

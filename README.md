@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/titiz-logo.png" alt="Titiz Logo" width="156" />
+</p>
+
 # Titiz
 
 > **English Overview:** **Titiz** is an open-source, 100% offline, deterministic macOS menu bar utility built for people who write Turkish on an English keyboard. It restores missing Turkish diacritics (`ç, ğ, ı, İ, ö, ş, ü`) and fixes high-confidence Turkish spelling and punctuation mistakes locally with zero cloud calls, zero API keys, and zero generative rewriting. Titiz prioritizes **precision strictly over recall** ("never break what is already correct"), protecting proper nouns, brand names, code identifiers, and English technical terms out of the box.
@@ -59,7 +63,8 @@ Titiz
 ├── Sources/CHunspell         # Gömülü C/C++ Hunspell motoru ve C köprü başlığı
 ├── Sources/TitizEval         # Geliştirme ve kör test seti ölçüm/gecikme CLI aracı
 ├── Tests/TitizCoreTests      # Birim ve regresyon test paketleri
-└── scripts/                  # Çevrimdışı varlık üretimi ve Titiz.app / .zip / .dmg paketleme betikleri
+├── assets/                   # Özel macOS uygulama simgesi (AppIcon.icns) ve README logosu
+└── scripts/                  # Çevrimdışı varlık üretimi, simge ve Titiz.app paketleme betikleri
 ```
 
 ---
@@ -108,7 +113,7 @@ swift run TitizApp
 
 - `Package.swift` dosyası dağıtım hedefini `macOS(.v14)` olarak tanımlar. macOS 26 ve üzeri sistemlerde `#available(macOS 26.0, *)` ile yerel Apple Liquid Glass API'leri, macOS 14–15 sistemlerde ise `.ultraThinMaterial` / `.regularMaterial` uyumlu görsel katman kullanılır.
 - **Uyumluluk Notu:** macOS 14–15 çalışma zamanı uyumluluğu hedeflenmektedir; ancak doğrudan macOS 14 ve 15 ortamlarında doğrulanana kadar test edilmemiş kabul edilmelidir.
-- **Uygulama Simgesi:** Şu an yer tutucu olarak sistem SF Symbol simgesi (`text.badge.checkmark`) kullanılmaktadır; nihai özel uygulama simgesi ayrı bir tasarım aşamasında eklenecektir.
+- **Uygulama Simgesi:** Titiz, macOS yuvarlatılmış kare (*squircle*) formunda kırık bordo (`#702D38`) zemin üzerine kırık mermer beyazı (`#EFEAE1`) **T** tipografisiyle tasarlanmış özel uygulama simgesini kullanır ([assets/titiz-logo.png](assets/titiz-logo.png), [assets/AppIcon.icns](assets/AppIcon.icns) ve [scripts/generate-icon.swift](scripts/generate-icon.swift)).
 
 ---
 

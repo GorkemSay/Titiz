@@ -98,6 +98,13 @@ cp "${EXECUTABLE_PATH}" "${MACOS_DIR}/TitizApp"
 chmod +x "${MACOS_DIR}/TitizApp"
 ditto "${RESOURCE_BUNDLE_PATH}" "${RESOURCES_DIR}/Titiz_TitizCore.bundle"
 
+APP_ICON_PATH="${ROOT_DIR}/assets/AppIcon.icns"
+if [[ ! -f "${APP_ICON_PATH}" ]]; then
+  echo "Error: App icon not found at ${APP_ICON_PATH}. Run swift scripts/generate-icon.swift first." >&2
+  exit 1
+fi
+cp "${APP_ICON_PATH}" "${RESOURCES_DIR}/AppIcon.icns"
+
 cat > "${CONTENTS_DIR}/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -109,6 +116,8 @@ cat > "${CONTENTS_DIR}/Info.plist" <<EOF
     <string>Titiz</string>
     <key>CFBundleExecutable</key>
     <string>TitizApp</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundleIdentifier</key>
     <string>${BUNDLE_ID}</string>
     <key>CFBundleInfoDictionaryVersion</key>

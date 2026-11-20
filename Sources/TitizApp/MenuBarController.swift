@@ -1,4 +1,5 @@
 import AppKit
+import CoreText
 import SwiftUI
 import TitizCore
 
@@ -21,9 +22,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
 
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = item.button {
-            let image = NSImage(systemSymbolName: "text.badge.checkmark", accessibilityDescription: "Titiz")
-            image?.isTemplate = true
-            button.image = image
+            button.image = makeMenuBarTemplateIcon()
             button.toolTip = "Titiz — Çevrimdışı Türkçe Düzeltici"
             button.target = self
             button.action = #selector(togglePopover(_:))
@@ -105,5 +104,69 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         mainMenu.addItem(editMenuItem)
 
         NSApp.mainMenu = mainMenu
+    }
+
+    private func makeMenuBarTemplateIcon() -> NSImage {
+        let size = NSSize(width: 18, height: 18)
+        let squirclePath = RoundedRectangle(cornerRadius: 3.375, style: .continuous)
+            .path(in: CGRect(x: 1.5, y: 1.5, width: 15.0, height: 15.0))
+            .cgPath
+        let glyphPath = Self.makeTemplateTPath(centeredAt: CGPoint(x: 9.0, y: 8.9), targetHeight: 9.4)
+
+        let image = NSImage(size: size, flipped: false) { _ in
+            guard let ctx = NSGraphicsContext.current?.cgContext else { return false }
+
+            ctx.beginTransparencyLayer(auxiliaryInfo: nil)
+            defer { ctx.endTransparencyLayer() }
+
+            ctx.setShouldAntialias(true)
+            ctx.setAllowsAntialiasing(true)
+            ctx.addPath(squirclePath)
+            ctx.setFillColor(CGColor(gray: 0, alpha: 1))
+            ctx.fillPath()
+
+            if let glyphPath {
+                ctx.setBlendMode(.destinationOut)
+                ctx.addPath(glyphPath)
+                ctx.setFillColor(CGColor(gray: 0, alpha: 1))
+                ctx.fillPath()
+            }
+
+            return true
+        }
+        image.isTemplate = true
+        image.accessibilityDescription = "Titiz"
+        return image
+    }
+
+    private static func makeTemplateTPath(centeredAt center: CGPoint, targetHeight: CGFloat) -> CGPath? {
+        let baseFont = NSFont.systemFont(ofSize: 44, weight: .bold)
+        let font: NSFont
+        if let descriptor = baseFont.fontDescriptor.withDesign(.serif),
+           let serifFont = NSFont(descriptor: descriptor, size: 44) {
+            font = serifFont
+        } else if let georgia = NSFont(name: "Georgia-Bold", size: 44) {
+            font = georgia
+        } else {
+            font = baseFont
+        }
+
+        let ctFont = font as CTFont
+        var chars: [UniChar] = Array("T".utf16)
+        var glyphs: [CGGlyph] = [0]
+        guard CTFontGetGlyphsForCharacters(ctFont, &chars, &glyphs, chars.count),
+              let rawPath = CTFontCreatePathForGlyph(ctFont, glyphs[0], nil) else {
+            return nil
+        }
+
+        let bounds = rawPath.boundingBoxOfPath
+        guard bounds.height > 0 else { return nil }
+
+        let scale = targetHeight / bounds.height
+        var transform = CGAffineTransform.identity
+        transform = transform.translatedBy(x: center.x, y: center.y)
+        transform = transform.scaledBy(x: scale, y: scale)
+        transform = transform.translatedBy(x: -bounds.midX, y: -bounds.midY)
+        return rawPath.copy(using: &transform)
     }
 }

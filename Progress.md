@@ -95,6 +95,7 @@
 | ADR-020 | 2026-11-20 | Gate macOS 26+ Liquid Glass modifiers (`GlassEffectContainer`, `.glassEffect`) behind `#available(macOS 26.0, *)` + `!accessibilityReduceTransparency`, falling back to `.regularMaterial`/`.ultraThinMaterial` and opaque AppKit colors on Reduce Transparency or macOS 14–15. | Delivers authentic first-party Apple Liquid Glass craft while honoring macOS accessibility settings and keeping macOS 14–15 fallback clean. |
 | ADR-021 | 2026-11-20 | Package Release `Titiz.app` in `scripts/bundle-app.sh` with `LSUIElement = true`, `Titiz_TitizCore.bundle` under `Contents/Resources/` (matching SwiftPM `Bundle.module` lookup order), `plutil -lint`, ad-hoc `codesign --force --deep --sign -`, and reproducible `ditto` `.zip` + `hdiutil` `.dmg` archives into gitignored `dist/`. | Produces a self-contained drag-and-drop macOS menu bar bundle verified cleanly with `codesign --verify --deep --strict` and direct binary launch. |
 | ADR-022 | 2026-11-20 | Guard `-diğimi`/`-tığımı`-style 1st-person possessive participle clitic false splits via `participlePossessiveAccusativeSuffixes`, `?`-context gating (`followedByQuestionMark`) for rare Hunspell-valid stems, and `knownOverpermissiveClitics` (`varmı`/`yokmu`); replace SwiftUI `Settings` app wrapper with pure AppKit `TitizAppMain` (`.accessory`) and refine popover layout (`Karakter \| Yazım` + `Çift Mod`, `#702D38` accent, separated History/Settings pills, main-footer `Çıkış`). | Eliminates false `-mi` splits like `verdiğimi -> verdiği mi` while preserving true question clitics, removes the blank `Titiz Ayarları` launch window, and aligns the menu bar popover UI with user feedback. |
+| ADR-023 | 2026-11-20 | Generate Titiz's custom macOS app icon (`assets/AppIcon.icns`) and standalone README mark (`assets/titiz-logo.png`) via `scripts/generate-icon.swift` using a continuous-curvature macOS squircle in broken burgundy (`#702D38`) and an optically scaled 44pt New York serif `T` in broken marble white (`#EFEAE1`), matched by `TitizLogoBadge` in `MainPopoverView` and a knocked-out template `NSStatusItem` glyph in `MenuBarController`. | Delivers a cohesive custom macOS brand mark across Finder/DMG bundles, the menu bar status item (`isTemplate = true`), in-popover header, and GitHub `README.md` top banner without external raster dependencies. |
 
 ---
 
@@ -250,4 +251,20 @@ Target gates (from `SPEC.md` Phase 2):
     - Release Latency (`.combined`, 50 runs): Short (`273` chars) `p50 = 0.640 ms / p95 = 0.786 ms`; Long (`1926` chars) `p50 = 5.843 ms / p95 = 6.138 ms`.
   - `./scripts/bundle-app.sh` — Passed (`exit 0`); rebuilt `dist/Titiz.app`, `dist/Titiz-0.1.0-macOS.zip` (`19M`, SHA-256: `a1928f0d3e993ad312e9ff2249aa3b7481d286d3c9fa8da4540d1476ddf87748`), and `dist/Titiz-0.1.0-macOS.dmg` (`21M`, SHA-256: `e45f4c6465e482fc1bc49df7a21c813a444e0aef3c0de5398295f85d26d9dc18`).
   - **Direct Bundle Launch Check:** Launched `dist/Titiz.app/Contents/MacOS/TitizApp` directly (`task-1082`, `type="UIElement"`); verified empty stderr log and 0 active macOS windows via `CGWindowListCopyWindowInfo` before stopping the test daemon.
+- `SPEC.md` — Verified present and unmodified.
+
+## Custom Brand Icon & README Logo Notes
+
+- **Asset Pipeline (`scripts/generate-icon.swift`, `assets/titiz-logo.png`, `assets/AppIcon.icns`):**
+  - Rendered deterministic continuous-curvature macOS squircle icon (`824×824` inside `1024×1024`) with `#702D38` broken burgundy tonal surface and broken marble white (`#EFEAE1`) New York serif `T` glyph, plus all 10 retina `.iconset` resolutions compiled into `assets/AppIcon.icns` via `/usr/bin/iconutil`.
+  - Visually inspected `assets/titiz-logo.png` after optical point-size tuning (`44pt` base descriptor scaled to vector glyph outline for crisp crossbar joints) and zero-radius glow cleanup.
+- **App & Documentation Integration:**
+  - Bundled `assets/AppIcon.icns` into `dist/Titiz.app/Contents/Resources/AppIcon.icns` with `CFBundleIconFile = AppIcon` in `scripts/bundle-app.sh`.
+  - Added `TitizLogoBadge` (`LiquidGlassSurface.swift`) to `MainPopoverView.swift` header and `makeMenuBarTemplateIcon()` (`isTemplate = true`) in `MenuBarController.swift`.
+  - Placed standalone centered `<img src="assets/titiz-logo.png">` above `# Titiz` in `README.md`, added `assets/` to the architecture tree, and replaced the placeholder icon notice.
+- **Verification Results:**
+  - `swift build` — Passed (`exit 0`, 0 errors, 0 Swift compiler warnings).
+  - `swift test` — Passed (`exit 0`, **50 / 50 tests** in 9 suites passed in 4.681 seconds).
+  - `./scripts/bundle-app.sh` — Passed (`exit 0`); verified `dist/Titiz.app/Contents/Resources/AppIcon.icns` (`1.2M`), `plutil -lint` (`OK`), `CFBundleIconFile` (`AppIcon`), `codesign --verify --deep --strict`, `dist/Titiz-0.1.0-macOS.zip` (`20M`, SHA-256: `278a2f735c49e6654194a12ff58d3f8e5e0d8de5f866d9f7256fdfee672295cb`), and `dist/Titiz-0.1.0-macOS.dmg` (`23M`, SHA-256: `01a4e74f6fa446a7ef2e9cf11ebb2c6118cfbb4f5107213b804f9dcd37c7383d`).
+  - Direct launch of `dist/Titiz.app/Contents/MacOS/TitizApp` (`task-1213`) ran cleanly with empty stderr log before being stopped.
 - `SPEC.md` — Verified present and unmodified.
