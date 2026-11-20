@@ -15,19 +15,22 @@ public final class TitizResources: Sendable {
     public let englishWordlist: EnglishWordlist
     public let frequencyTable: TurkishFrequencyTable
     public let gazetteer: EntityGazetteer
+    public let ruleCatalog: SpellingRuleCatalog
 
     public init(
         dictionary: HunspellDictionary,
         gpaScorer: GPAScorer,
         englishWordlist: EnglishWordlist,
         frequencyTable: TurkishFrequencyTable,
-        gazetteer: EntityGazetteer
+        gazetteer: EntityGazetteer,
+        ruleCatalog: SpellingRuleCatalog
     ) {
         self.dictionary = dictionary
         self.gpaScorer = gpaScorer
         self.englishWordlist = englishWordlist
         self.frequencyTable = frequencyTable
         self.gazetteer = gazetteer
+        self.ruleCatalog = ruleCatalog
     }
 
     public static func loadBundled() throws -> TitizResources {
@@ -36,13 +39,15 @@ public final class TitizResources: Sendable {
         let en = try EnglishWordlist.loadBundled()
         let freq = try TurkishFrequencyTable.loadBundled()
         let gazetteer = try EntityGazetteer.loadBundled()
+        let ruleCatalog = try SpellingRuleCatalog.loadBundled()
 
         return TitizResources(
             dictionary: dict,
             gpaScorer: gpa,
             englishWordlist: en,
             frequencyTable: freq,
-            gazetteer: gazetteer
+            gazetteer: gazetteer,
+            ruleCatalog: ruleCatalog
         )
     }
 }

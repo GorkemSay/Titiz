@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "1.0.0",
+  "rules": [
+    {
+      "id": "spell.punctuation.space_before",
+      "name": "Noktalama Öncesi Boşluk",
+      "explanationTR": "Türkçede ?, !, ,, ., ; ve : işaretlerinden önce boşluk bırakılmaz.",
+      "tdkReferenceURL": "https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/",
+      "examples": [
+        { "before": "Bugün toplantı var mı ?", "after": "Bugün toplantı var mı?" },
+        { "before": "Dikkat et !", "after": "Dikkat et!" }
+      ]
+    },
+    {
+      "id": "spell.punctuation.space_after",
+      "name": "Noktalama Sonrası Boşluk",
+      "explanationTR": "Noktalama işaretlerinden (?, !, ,, ., ;, :) sonra gelen sözcükten önce bir boşluk bırakılır.",
+      "tdkReferenceURL": "https://tdk.gov.tr/icerik/yazim-kurallari/noktalama-isaretleri-aciklamalar/",
+      "examples": [
+        { "before": "Merhaba ,dünya!", "after": "Merhaba, dünya!" },
+        { "before": "Hazır,ama eksik.", "after": "Hazır, ama eksik." }
+      ]
+    },
+    {
+      "id": "spell.capitalization.sentence_start",
+      "name": "Cümle Başı Büyük Harf (tr_TR)",
+      "explanationTR": "Cümleler büyük harfle başlar; Türkçe yerel ayar kurallarına göre i → İ ve ı → I dönüşümü uygulanır.",
+      "tdkReferenceURL": "https://tdk.gov.tr/icerik/yazim-kurallari/buyuk-harflerin-kullanildigi-yerler/",
+      "examples": [
+        { "before": "istanbul çok güzel. ırmak kenarında yürüdük.", "after": "İstanbul çok güzel. Irmak kenarında yürüdük." },
+        { "before": "ikinci toplantı yarın.", "after": "İkinci toplantı yarın." }
+      ]
+    },
+    {
+      "id": "spell.question_particle.separate",
+      "name": "Soru Eki mi / mı / mu / mü",
+      "explanationTR": "Soru eki mı / mi / mu / mü ve aldığı çekim ekleri kendinden önceki sözcükten her zaman ayrı yazılır.",
+      "tdkReferenceURL": "https://tdk.gov.tr/icerik/yazim-kurallari/soru-eki-mi-mi-mu-munun-yazilisi/",
+      "examples": [
+        { "before": "Bugün toplantı varmı?", "after": "Bugün toplantı var mı?" },
+        { "before": "Film güzelmiydi?", "after": "Film güzel miydi?" }
+      ]
+    },
+    {
+      "id": "spell.joint.question_clitic",
+      "name": "Birleşik Soru Eki ve Karakter Onarımı",
+      "explanationTR": "ASCII harflerle bitişik yazılmış sözcük + soru eki öbeğini ayırır, kökteki eksik Türkçe karakterleri tamamlar ve soru ekini ünlü uyumuna göre düzenler.",
+      "tdkReferenceURL": "https://tdk.gov.tr/icerik/yazim-kurallari/soru-eki-mi-mi-mu-munun-yazilisi/",
+      "examples": [
+        { "before": "ciktimi", "after": "çıktı mı" },
+        { "before": "gordunmu", "after": "gördün mü" }
+      ]
+    },
+    {
+      "id": "spell.closed_tdk.lexicon",
+      "name": "TDK Kesin Yazım Düzeltmeleri",
+      "explanationTR": "Türk Dil Kurumu Yazım Kılavuzu'nda yazımı kesinleşmiş sık karıştırılan sözcük ve birleşimleri düzeltir.",
+      "tdkReferenceURL": "https://tdk.gov.tr/icerik/yazim-kurallari/baglac-olan-da-denin-yazilisi/",
+      "examples": [
+        { "before": "herşey", "after": "her şey" },
+        { "before": "herkez", "after": "herkes" },
+        { "before": "yanlız", "after": "yalnız" },
+        { "before": "yalnış", "after": "yanlış" },
+        { "before": "sağol", "after": "sağ ol" },
+        { "before": "hoşçakal", "after": "hoşça kal" },
+        { "before": "ardarda", "after": "art arda" }
+      ]
+    },
+    {
+      "id": "spell.joint.closed_tdk",
+      "name": "Birleşik TDK Yazım ve Karakter Onarımı",
+      "explanationTR": "ASCII harflerle bitişik yazılmış kesin TDK sözcüklerini tek adımda ayırır ve Türkçe karakterlerini geri yükler.",
+      "tdkReferenceURL": "https://tdk.gov.tr/icerik/yazim-kurallari/ayri-yazilan-birlesik-kelimeler/",
+      "examples": [
+        { "before": "hersey", "after": "her şey" },
+        { "before": "birsey", "after": "bir şey" }
+      ]
+    },
+    {
+      "id": "char.bucket1",
+      "name": "Kesin Türkçe Karakter Tamamlama",
+      "explanationTR": "Sözlükte tek geçerli Türkçe karşılığı bulunan ASCII sözcüğü yüksek güvenle düzeltir.",
+      "tdkReferenceURL": "https://tdk.gov.tr/",
+      "examples": [
+        { "before": "disari", "after": "dışarı" },
+        { "before": "icin", "after": "için" }
+      ]
+    },
+    {
+      "id": "char.bucket2",
+      "name": "Bağlama Dayalı Türkçe Karakter Seçimi",
+      "explanationTR": "Birden fazla geçerli Türkçe aday arasından cümle bağlamı ve frekans modeline göre en güçlü adayı seçer.",
+      "tdkReferenceURL": "https://tdk.gov.tr/",
+      "examples": [
+        { "before": "yarin", "after": "yarın" },
+        { "before": "isim", "after": "işim" }
+      ]
+    }
+  ],
+  "closedTDKFixes": [
+    { "wrong": "herşey", "correct": "her şey", "ruleID": "spell.closed_tdk.lexicon", "asciiVariantOnly": false },
+    { "wrong": "birşey", "correct": "bir şey", "ruleID": "spell.closed_tdk.lexicon", "asciiVariantOnly": false },
+    { "wrong": "hiçbirşey", "correct": "hiçbir şey", "ruleID": "spell.closed_tdk.lexicon", "asciiVariantOnly": false },
+    { "wrong": "herkez", "correct": "herkes", "ruleID": "spell.closed_tdk.lexicon", "asciiVariantOnly": false },
+    { "wrong": "yanlız", "correct": "yalnız", "ruleID": "spell.closed_tdk.lexicon", "asciiVariantOnly": false },
+    { "wrong": "yalnış", "correct": "yanlış", "ruleID": "spell.closed_tdk.lexicon", "asciiVariantOnly": false },
+    { "wrong": "sağol", "correct": "sağ ol", "ruleID": "spell.closed_tdk.lexicon", "asciiVariantOnly": false },
+    { "wrong": "hoşçakal", "correct": "hoşça kal", "ruleID": "spell.closed_tdk.lexicon", "asciiVariantOnly": false },
+    { "wrong": "ardarda", "correct": "art arda", "ruleID": "spell.closed_tdk.lexicon", "asciiVariantOnly": false },
+    { "wrong": "hersey", "correct": "her şey", "ruleID": "spell.joint.closed_tdk", "asciiVariantOnly": true },
+    { "wrong": "birsey", "correct": "bir şey", "ruleID": "spell.joint.closed_tdk", "asciiVariantOnly": true },
+    { "wrong": "hicbirsey", "correct": "hiçbir şey", "ruleID": "spell.joint.closed_tdk", "asciiVariantOnly": true },
+    { "wrong": "hoscakal", "correct": "hoşça kal", "ruleID": "spell.joint.closed_tdk", "asciiVariantOnly": true },
+    { "wrong": "sagol", "correct": "sağ ol", "ruleID": "spell.joint.closed_tdk", "asciiVariantOnly": true }
+  ]
+}

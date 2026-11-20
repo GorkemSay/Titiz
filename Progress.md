@@ -51,10 +51,10 @@
 - [x] Pass entity protection & collision unit tests + `TitizEval` entity retention >= 99% (100% Tier 1 / Tier 2A), update `Progress.md`, commit & push
 
 ### Phase 5 — High-Precision Spelling Engine & Joint Combined Mode (`Düzelt`)
-- [ ] Implement `Resources/rules.json` (TDK citations, explanations, examples) and Swift spelling rules (punctuation spacing, `tr_TR` sentence-start capitalization, `mi/mı/mu/mü` separation, closed TDK list)
-- [ ] Implement Combined Mode (`Düzelt`) with joint split-and-deasciify (`ciktimi -> çıktı mı`, `varmi -> var mı`, `gordunmu -> gördün mü`, `hersey -> her şey`) and edit provenance tracking
-- [ ] Verify canonical target (`Intel ekibinden MaviKutu icin cevap geldimi?` -> `Intel ekibinden MaviKutu için cevap geldi mi?`)
-- [ ] Run full `TitizEval` benchmark across all 3 modes (plus blind set if provided), verify all Phase 2 thresholds met, log full report in `Progress.md`, commit & push
+- [x] Implement `Resources/rules.json` (TDK citations, explanations, examples) and Swift spelling rules (punctuation spacing, `tr_TR` sentence-start capitalization, `mi/mı/mu/mü` separation, closed TDK list)
+- [x] Implement Combined Mode (`Düzelt`) with joint split-and-deasciify (`ciktimi -> çıktı mı`, `varmi -> var mı`, `gordunmu -> gördün mü`, `hersey -> her şey`) and edit provenance tracking
+- [x] Verify canonical target (`Intel ekibinden MaviKutu icin cevap geldimi?` -> `Intel ekibinden MaviKutu için cevap geldi mi?`)
+- [x] Run full `TitizEval` benchmark across all 3 modes (plus blind set if provided), verify all Phase 2 thresholds met, log full report in `Progress.md`, commit & push
 
 ### Phase 6 — Native macOS Menu Bar UI (`TitizApp` — Apple Liquid Glass)
 - [ ] Build `TitizApp` following Apple Liquid Glass guidelines on macOS 26+ (`#available(macOS 26.0, *)`) and clean material fallback on macOS 14–15 (zero AI slop)
@@ -89,6 +89,8 @@
 | ADR-014 | 2026-11-19 | Build compact binary frequency table `tr_freq.bin` (150,000 unigrams + 337,054 ambiguity-filtered bigrams, 4.18 MiB) offline via `scripts/build-frequency-tables.py` from CC BY 4.0 Leipzig Turkish corpora (`tur_wikipedia_2021_300K` + `tur_news_2020_300K`, 8,065,855 tokens) with Lidstone smoothing and binary-search `TurkishFrequencyTable`. | Keeps Titiz 100% offline with compact storage and fast PMI-boosted Bucket 2 disambiguation. |
 | ADR-015 | 2026-11-20 | Cross-filter 4,765 Wikidata CC0 records via `scripts/build-wikidata-entities.py` into `tier2a_entities.txt` (1,078), `tier2b_entities.txt` (748), and `tier3_entities.txt` (1,967) against `tr_TR.dic` (exact + ASCII-folded) and `en_common_tech.txt`, preserving explicit proper-noun-only `tr_TR.dic` artifacts (`Atatürk`, `İstanbul`) and Leipzig news proper-noun allowlist (`Intel`, `Netflix`, `PlayStation`). | Prevents common Turkish/English collisions (`Can`, `It`, `Son`, `Su`, `Yol`, `Apple`, `Swift`, `Ordu`, `Van`) from entering `Tier2A` while ensuring canonical distinctive proper nouns remain protected at sentence start. |
 | ADR-016 | 2026-11-20 | Enforce strict `Tier 0 structural -> Tier 1 Personal Dictionary -> Tier 3 Longest-Match Trie -> Tier 2A -> Tier 2B` precedence in `ProperNounProtector`, backed by thread-safe lock-free-snapshot `PersonalDictionaryStore` (`~/Library/Application Support/Titiz/personal_dictionary.json`) and isolated per-case `additionalPersonalTerms` in `TitizEngine`/`EvalScorer`. | Guarantees immediate `"Bu adı hep koru"` precedence over all built-in tiers while keeping library/test/eval runs deterministic and isolated from local user preferences. |
+| ADR-017 | 2026-11-20 | Gate Hunspell-accepted `-mi/-mı/-mu/-mü` whole words in `QuestionCliticSplitter` using `tr_freq.bin` unigram threshold (`unigramLog10 > -5.5`) and `protectedWholeWords` while running English stem guard only on unvalidated joint stems. | Catches over-permissive `hunspell-tr` clitic forms (`varmı` [-6.22], `çıktımı` [-8.20]) without splitting legitimate Turkish nouns (`ekonomi`, `yapımı`, `durumu`, `üretimi`) or blocking `var` due to JS keyword `"var"` in `en_common_tech.txt`. |
+| ADR-018 | 2026-11-20 | Track unified `(originalText, correctedText)` UTF-16 `Edit` ranges across `.combined` (`CharacterEngine` + `SpellingEngine`) by projecting through both `characterEdits` deltas and `NormalizedText` NFD->NFC boundaries and merging same-token rewrites. | Ensures exact, non-overlapping UTF-16 inline highlight ranges and independent per-edit revert even on NFD inputs and spaced punctuation. |
 
 ---
 
@@ -110,6 +112,7 @@ Target gates (from `SPEC.md` Phase 2):
 | Phase 3 (All 60 Dev) | `Datasets/dev_cases.json` (60 cases; Phase 4–5 rules pending) | 0.00% (0/340); Clean: 0.00% (0/123) | 100.00% (48/48; T1: 3/3, T2A: 9/9) | Bucket 1: 100.00% (70/70); Overall: 64.39% (85/132) | 96.59% (85/88) | Release: 273c 0.361 / 0.452 ms; 1926c 3.450 / 3.679 ms |
 | Phase 4 (Character) | `Datasets/dev_cases.json` (20 `character` cases, Release) | 0.00% (0/78); Clean: 0.00% (0/45) | 100.00% (9/9; T2A: 1/1) | Bucket 1: 100.00% (37/37); Overall: 100.00% (44/44) | 100.00% (44/44) | Release: 273c 0.374 / 0.482 ms; 1926c 3.414 / 5.288 ms |
 | Phase 4 (All 60 Dev) | `Datasets/dev_cases.json` (60 cases; Phase 5 spelling pending) | 0.00% (0/340); Clean: 0.00% (0/123) | 100.00% (48/48; T1: 3/3, T2A: 9/9) | Bucket 1: 100.00% (70/70); Overall: 64.39% (85/132) | 96.59% (85/88) | Release: 273c 0.373 / 0.406 ms; 1926c 3.308 / 3.470 ms |
+| Phase 5 (All 60 Dev) | `Datasets/dev_cases.json` (60 cases across all 3 modes, Release `--enforce-gates`) | 0.00% (0/340); Clean: 0.00% (0/123) | 100.00% (48/48; T1: 3/3, T2A: 9/9) | Bucket 1: 100.00% (70/70); Overall: 99.24% (131/132) | 100.00% (131/131) | Release: 273c 0.621 / 0.677 ms; 1926c 5.710 / 5.857 ms |
 
 ---
 
@@ -178,4 +181,19 @@ Target gates (from `SPEC.md` Phase 2):
 - `swift test` — Passed (`exit 0`, Swift Testing: 42 tests across 7 suites including `"4-Tier Proper Noun Protection & Personal Dictionary"` passed in 4.966 seconds; 0 failures).
 - `swift run -c release TitizEval --mode character` (Release, 20 `character` cases) — Passed (`exit 0`, 20/20 exact match, FP 0.00% [0/78], Clean FP 0.00% [0/45], Retention 100.00% [9/9], Bucket 1 Recall 100.00% [37/37], Overall Recall 100.00% [44/44], Precision 100.00% [44/44]; Release `.combined` latency: 273c p50=0.374 ms / p95=0.482 ms [PASS], 1926c p50=3.414 ms / p95=5.288 ms [PASS]).
 - `swift run -c release TitizEval` (Release, all 60 cases) — Exited `0`, FP 0.00% [0/340], Clean FP 0.00% [0/123], Retention 100.00% [48/48: tier0 21/21, tier1 3/3, tier2A 9/9, tier2B 5/5, tier3 3/3, foreign_term 7/7], Bucket 1 Recall 100.00% [70/70], Overall In-Scope Recall 64.39% [85/132] (Phase 5 spelling/combined rules pending), Precision 96.59% [85/88]; Release `.combined` latency: 273c p50=0.373 ms / p95=0.406 ms [PASS], 1926c p50=3.308 ms / p95=3.470 ms [PASS].
+- `SPEC.md` — Verified present and unmodified.
+
+## Phase 5 Verification Notes
+
+- **Implemented Deterministic Rules & Catalog:**
+  - `Sources/TitizCore/Resources/rules.json` & `SpellingRuleCatalog.swift`: Turkish TDK explanations, reference links, examples, and closed TDK lexicon (`herşey`, `birşey`, `hiçbirşey`, `herkez`, `yanlız`, `yalnış`, `sağol`, `hoşçakal`, `ardarda` + `.combined` ASCII variants `hersey`, `birsey`, `hicbirsey`, `hoscakal`, `sagol`).
+  - `PunctuationSpacer.swift`, `QuestionCliticSplitter.swift`, `SpellingEngine.swift`, and `TitizEngine.swift` Combined orchestrator with exact NFD/NFC UTF-16 `Edit` range projection.
+- `swift build` — Passed (`exit 0`, 0 errors, 0 Swift compiler warnings).
+- `swift test` — Passed (`exit 0`, Swift Testing: 49 tests across 8 suites including `"SpellingEngine & Combined Mode (Düzelt)"` passed in 4.229 seconds; 0 failures).
+- `swift run -c release TitizEval --verbose --enforce-gates` (Release, all 60 dev cases; no user-provided blind file present) — Passed ALL gates (`exit 0`):
+  - FP Overall: `0.00% (0/340)` (`<= 0.50%`) [PASS]; Clean FP: `0.00% (0/123)` (`== 0.00%`) [PASS].
+  - Entity / Foreign Retention: `100.00% (48/48)` (`tier0: 21/21`, `tier1: 3/3`, `tier2A: 9/9`, `tier2B: 5/5`, `tier3: 3/3`, `foreign_term: 7/7`) [PASS].
+  - Bucket 1 Recall: `100.00% (70/70)` [PASS]; Overall In-Scope Recall: `99.24% (131/132)` [PASS]; Edit Precision: `100.00% (131/131)` [PASS].
+  - By Mode: `character` `100.00%` exact (`20/20`), `spelling` `100.00%` exact (`20/20`), `combined` `95.00%` exact (`19/20`; `comb-punct-01` conservatively preserves valid `"isim"` while attaching `"işim"` as Bucket 2 suggestion).
+  - Release `.combined` Latency: Short (`273` chars) `p50 = 0.621 ms / p95 = 0.677 ms` [PASS]; Long (`1926` chars) `p50 = 5.710 ms / p95 = 5.857 ms` [PASS].
 - `SPEC.md` — Verified present and unmodified.

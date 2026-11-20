@@ -14,6 +14,7 @@ public struct TitizEngine: Sendable {
     public let resources: TitizResources
     public let personalDictionaryStore: PersonalDictionaryStore
     private let characterEngine: CharacterEngine
+    private let spellingEngine: SpellingEngine
 
     public init(
         resources: TitizResources = .shared,
@@ -29,31 +30,19 @@ public struct TitizEngine: Sendable {
             frequencyTable: resources.frequencyTable,
             config: characterConfig
         )
+        self.spellingEngine = SpellingEngine(
+            dictionary: resources.dictionary,
+            gpaScorer: resources.gpaScorer,
+            englishWordlist: resources.englishWordlist,
+            frequencyTable: resources.frequencyTable,
+            ruleCatalog: resources.ruleCatalog
+        )
     }
 
     /// Runs UTF-8 NFC normalization, structural lexing, and 4-tier proper-noun protection (Tier 0–3).
     public func analyze(_ text: String, additionalPersonalTerms: [String] = []) -> AnalyzedDocument {
-        let normalized = TextNormalizer.normalize(text)
-        let lexed = StructuralLexer.tokenize(normalized)
-        let tier0Protected = Tier0Protector.apply(to: lexed)
-
-        let baseSnapshot = personalDictionaryStore.snapshot
-        let effectiveSnapshot: PersonalDictionarySnapshot
-        if additionalPersonalTerms.isEmpty {
-            effectiveSnapshot = baseSnapshot
-        } else {
-            let extraEntries = additionalPersonalTerms.map { PersonalDictionaryEntry(term: $0, isCaseSensitive: true) }
-            effectiveSnapshot = PersonalDictionarySnapshot(entries: baseSnapshot.entries + extraEntries)
-        }
-
-        let protectedTokens = ProperNounProtector.apply(
-            to: tier0Protected,
-            personalDictionary: effectiveSnapshot,
-            gazetteer: resources.gazetteer,
-            englishWordlist: resources.englishWordlist,
-            dictionary: resources.dictionary
-        )
-        return AnalyzedDocument(normalized: normalized, tokens: protectedTokens)
+        let snapshot = makeEffectiveSnapshot(additionalPersonalTerms: additionalPersonalTerms)
+        return analyze(text, personalSnapshot: snapshot)
     }
 
     /// Processes input text under the specified correction mode.
@@ -62,28 +51,215 @@ public struct TitizEngine: Sendable {
         mode: CorrectionMode = .combined,
         additionalPersonalTerms: [String] = []
     ) -> CorrectionResult {
-        let analyzed = analyze(text, additionalPersonalTerms: additionalPersonalTerms)
+        let snapshot = makeEffectiveSnapshot(additionalPersonalTerms: additionalPersonalTerms)
+        let analyzed = analyze(text, personalSnapshot: snapshot)
 
         switch mode {
         case .character:
             return characterEngine.process(analyzed)
         case .spelling:
-            // Deterministic TDK spelling & punctuation rules arrive in Phase 5.
-            return CorrectionResult(
-                originalText: analyzed.normalized.original,
-                correctedText: analyzed.normalized.original,
-                mode: .spelling
-            )
+            return spellingEngine.process(analyzed, enableJointDeasciify: false)
         case .combined:
-            // Phase 5 adds Spelling + Joint split-and-deasciify.
             let charResult = characterEngine.process(analyzed)
+            if charResult.edits.isEmpty {
+                let spellOnly = spellingEngine.process(analyzed, enableJointDeasciify: true)
+                return CorrectionResult(
+                    originalText: charResult.originalText,
+                    correctedText: spellOnly.correctedText,
+                    mode: .combined,
+                    edits: spellOnly.edits,
+                    ambiguousSuggestions: charResult.ambiguousSuggestions
+                )
+            }
+
+            let intermediateDoc = analyze(charResult.correctedText, personalSnapshot: snapshot)
+            let priorEditsByToken = mapPriorEdits(charResult.edits, onto: intermediateDoc.tokens)
+            let spellResult = spellingEngine.process(
+                intermediateDoc,
+                enableJointDeasciify: true,
+                priorCharacterEdits: priorEditsByToken
+            )
+
+            let mergedEdits = mergeCombinedEdits(
+                characterEdits: charResult.edits,
+                spellingEdits: spellResult.edits,
+                normalized: analyzed.normalized
+            )
+
             return CorrectionResult(
                 originalText: charResult.originalText,
-                correctedText: charResult.correctedText,
+                correctedText: spellResult.correctedText,
                 mode: .combined,
-                edits: charResult.edits,
+                edits: mergedEdits,
                 ambiguousSuggestions: charResult.ambiguousSuggestions
             )
+        }
+    }
+
+    // MARK: - Private Pipeline Helpers
+
+    private func makeEffectiveSnapshot(additionalPersonalTerms: [String]) -> PersonalDictionarySnapshot {
+        let baseSnapshot = personalDictionaryStore.snapshot
+        guard !additionalPersonalTerms.isEmpty else {
+            return baseSnapshot
+        }
+        let extraEntries = additionalPersonalTerms.map { PersonalDictionaryEntry(term: $0, isCaseSensitive: true) }
+        return PersonalDictionarySnapshot(entries: baseSnapshot.entries + extraEntries)
+    }
+
+    private func analyze(_ text: String, personalSnapshot: PersonalDictionarySnapshot) -> AnalyzedDocument {
+        let normalized = TextNormalizer.normalize(text)
+        let lexed = StructuralLexer.tokenize(normalized)
+        let tier0Protected = Tier0Protector.apply(to: lexed)
+        let protectedTokens = ProperNounProtector.apply(
+            to: tier0Protected,
+            personalDictionary: personalSnapshot,
+            gazetteer: resources.gazetteer,
+            englishWordlist: resources.englishWordlist,
+            dictionary: resources.dictionary
+        )
+        return AnalyzedDocument(normalized: normalized, tokens: protectedTokens)
+    }
+
+    private func mapPriorEdits(_ edits: [Edit], onto tokens: [Token]) -> [Int: Edit] {
+        guard !edits.isEmpty else { return [:] }
+        var map: [Int: Edit] = [:]
+        for edit in edits {
+            let rStart = edit.correctedRange.location
+            let rEnd = edit.correctedRange.location + edit.correctedRange.length
+            for idx in tokens.indices {
+                let tokRange = tokens[idx].utf16Range
+                let tStart = tokRange.location
+                let tEnd = tokRange.location + tokRange.length
+                if rStart >= tStart && rEnd <= tEnd {
+                    map[idx] = edit
+                    break
+                }
+            }
+        }
+        return map
+    }
+
+    private func mergeCombinedEdits(
+        characterEdits: [Edit],
+        spellingEdits: [Edit],
+        normalized: NormalizedText
+    ) -> [Edit] {
+        guard !spellingEdits.isEmpty else { return characterEdits }
+        guard !characterEdits.isEmpty else { return spellingEdits }
+
+        var merged: [Edit] = []
+        merged.reserveCapacity(characterEdits.count + spellingEdits.count)
+
+        var consumedCharIndices: Set<Int> = []
+        var overlappingPairs: [Int: Edit] = [:]
+
+        for spellEdit in spellingEdits {
+            let sMidStart = spellEdit.originalRange.location
+            let sMidEnd = sMidStart + spellEdit.originalRange.length
+
+            if let charIdx = characterEdits.firstIndex(where: { charEdit in
+                let cMidStart = charEdit.correctedRange.location
+                let cMidEnd = cMidStart + charEdit.correctedRange.length
+                return sMidStart < cMidEnd && cMidStart < sMidEnd
+            }) {
+                consumedCharIndices.insert(charIdx)
+                overlappingPairs[charIdx] = spellEdit
+            } else {
+                // Pure spelling edit: project originalRange from intermediate charResult back to NFC normalized text,
+                // then map through NormalizedText back to NFD originalText.
+                var charNormDeltaBefore = 0
+                for charEdit in characterEdits {
+                    let cMidEnd = charEdit.correctedRange.location + charEdit.correctedRange.length
+                    if cMidEnd <= sMidStart {
+                        // `charEdit.original` is the NFC token stem inside `normalized.text`.
+                        charNormDeltaBefore += (charEdit.correctedRange.length - charEdit.original.utf16.count)
+                    }
+                }
+                let normOrigRange = UTF16Range(
+                    location: spellEdit.originalRange.location - charNormDeltaBefore,
+                    length: spellEdit.originalRange.length
+                )
+                let projectedOrigRange = normalized.originalUTF16Range(for: normOrigRange)
+                merged.append(
+                    Edit(
+                        id: spellEdit.id,
+                        origin: spellEdit.origin,
+                        ruleID: spellEdit.ruleID,
+                        bucket: spellEdit.bucket,
+                        confidence: spellEdit.confidence,
+                        original: spellEdit.original,
+                        replacement: spellEdit.replacement,
+                        alternatives: spellEdit.alternatives,
+                        originalRange: projectedOrigRange,
+                        correctedRange: spellEdit.correctedRange
+                    )
+                )
+            }
+        }
+
+        for (charIdx, charEdit) in characterEdits.enumerated() {
+            if let spellEdit = overlappingPairs[charIdx] {
+                // Both stages touched the same token (e.g. `yarin` -> `yarın` -> `Yarın`): unify cleanly.
+                let prefixLen = spellEdit.originalRange.location - charEdit.correctedRange.location
+                let suffixStart = (charEdit.correctedRange.location + charEdit.correctedRange.length)
+                let spellEnd = spellEdit.originalRange.location + spellEdit.originalRange.length
+                let replacement: String
+                if prefixLen == 0 && spellEnd == suffixStart {
+                    replacement = spellEdit.replacement
+                } else {
+                    replacement = spellEdit.replacement
+                }
+                merged.append(
+                    Edit(
+                        id: charEdit.id,
+                        origin: charEdit.origin,
+                        ruleID: "\(charEdit.ruleID)+\(spellEdit.ruleID)",
+                        bucket: charEdit.bucket,
+                        confidence: min(charEdit.confidence, spellEdit.confidence),
+                        original: charEdit.original,
+                        replacement: replacement,
+                        alternatives: charEdit.alternatives,
+                        originalRange: charEdit.originalRange,
+                        correctedRange: spellEdit.correctedRange
+                    )
+                )
+            } else if !consumedCharIndices.contains(charIdx) {
+                // Pure character edit: project correctedRange forward into final text.
+                let cMidStart = charEdit.correctedRange.location
+                var spellDeltaBefore = 0
+                for spellEdit in spellingEdits {
+                    let sMidEnd = spellEdit.originalRange.location + spellEdit.originalRange.length
+                    if sMidEnd <= cMidStart {
+                        spellDeltaBefore += (spellEdit.correctedRange.length - spellEdit.originalRange.length)
+                    }
+                }
+                let projectedCorrectedRange = UTF16Range(
+                    location: charEdit.correctedRange.location + spellDeltaBefore,
+                    length: charEdit.correctedRange.length
+                )
+                merged.append(
+                    Edit(
+                        id: charEdit.id,
+                        origin: charEdit.origin,
+                        ruleID: charEdit.ruleID,
+                        bucket: charEdit.bucket,
+                        confidence: charEdit.confidence,
+                        original: charEdit.original,
+                        replacement: charEdit.replacement,
+                        alternatives: charEdit.alternatives,
+                        originalRange: charEdit.originalRange,
+                        correctedRange: projectedCorrectedRange
+                    )
+                )
+            }
+        }
+
+        return merged.sorted { lhs, rhs in
+            if lhs.originalRange.location != rhs.originalRange.location {
+                return lhs.originalRange.location < rhs.originalRange.location
+            }
+            return lhs.correctedRange.location < rhs.correctedRange.location
         }
     }
 }
