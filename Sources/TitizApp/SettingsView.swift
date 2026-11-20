@@ -35,13 +35,6 @@ struct SettingsView: View {
                     .font(.headline)
 
                 Spacer()
-
-                Button("Çıkış") {
-                    NSApplication.shared.terminate(nil)
-                }
-                .buttonStyle(.borderless)
-                .foregroundStyle(.secondary)
-                .font(.caption)
             }
 
             Divider()

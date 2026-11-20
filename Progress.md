@@ -94,6 +94,7 @@
 | ADR-019 | 2026-11-20 | Build `TitizApp` around `NSStatusBar` + `NSPopover` (`MenuBarController`) with `NSApp.setActivationPolicy(.accessory)`, explicit Cocoa Edit menu (`NSApp.mainMenu`), and an AppKit `TitizNSTextView` editor instead of pure SwiftUI `MenuBarExtra(.window)`. | Eliminates `.accessory` keyboard focus loss on open, guarantees reliable `⌘V`/`⌘C`/`⌘A`/`⌘Z` shortcuts, and enables native `NSAttributedString` inline diff underlines with click-anchored detail popovers. |
 | ADR-020 | 2026-11-20 | Gate macOS 26+ Liquid Glass modifiers (`GlassEffectContainer`, `.glassEffect`) behind `#available(macOS 26.0, *)` + `!accessibilityReduceTransparency`, falling back to `.regularMaterial`/`.ultraThinMaterial` and opaque AppKit colors on Reduce Transparency or macOS 14–15. | Delivers authentic first-party Apple Liquid Glass craft while honoring macOS accessibility settings and keeping macOS 14–15 fallback clean. |
 | ADR-021 | 2026-11-20 | Package Release `Titiz.app` in `scripts/bundle-app.sh` with `LSUIElement = true`, `Titiz_TitizCore.bundle` under `Contents/Resources/` (matching SwiftPM `Bundle.module` lookup order), `plutil -lint`, ad-hoc `codesign --force --deep --sign -`, and reproducible `ditto` `.zip` + `hdiutil` `.dmg` archives into gitignored `dist/`. | Produces a self-contained drag-and-drop macOS menu bar bundle verified cleanly with `codesign --verify --deep --strict` and direct binary launch. |
+| ADR-022 | 2026-11-20 | Guard `-diğimi`/`-tığımı`-style 1st-person possessive participle clitic false splits via `participlePossessiveAccusativeSuffixes`, `?`-context gating (`followedByQuestionMark`) for rare Hunspell-valid stems, and `knownOverpermissiveClitics` (`varmı`/`yokmu`); replace SwiftUI `Settings` app wrapper with pure AppKit `TitizAppMain` (`.accessory`) and refine popover layout (`Karakter \| Yazım` + `Çift Mod`, `#702D38` accent, separated History/Settings pills, main-footer `Çıkış`). | Eliminates false `-mi` splits like `verdiğimi -> verdiği mi` while preserving true question clitics, removes the blank `Titiz Ayarları` launch window, and aligns the menu bar popover UI with user feedback. |
 
 ---
 
@@ -229,3 +230,24 @@ Target gates (from `SPEC.md` Phase 2):
   - `THIRD_PARTY_NOTICES.md` — Audited against all embedded C/C++ sources and `Sources/TitizCore/Resources/` files; every license, version, and commit recorded cleanly.
   - `README.md` — Finalized architecture diagram, `./scripts/bundle-app.sh` instructions, measured Release `TitizEval` table, macOS 14–15 runtime notice, SF Symbol placeholder note, Gatekeeper "Yine de Aç" instructions, and completed Phases 0–7 roadmap.
   - `SPEC.md` — Verified present and unmodified.
+
+## Post-Phase 7 Refinement Notes
+
+- **`-mi` Clitic False-Split Fix (`QuestionCliticSplitter.swift`, `SpellingEngine.swift`, `SpellingAndCombinedTests.swift`):**
+  - Guarded 1st-person possessive participle accusative endings (`participlePossessiveAccusativeSuffixes`, e.g., `verdiğimi`, `söylediğimi`, `yaptığımı`, `kararımı`, `arkadaşımı`) and non-interrogative `-m` possessive stems (`Yazıcıdan çıktımı aldım.`) from false question-clitic splitting.
+  - Added `?`-context propagation (`followedByQuestionMark`) for genuine interrogatives with corpus-rare stems (`Disari ciktimi ?`) and `knownOverpermissiveClitics` (`varmı`, `varmi`, `yokmu`) where Hunspell accepts truncated stems (`varm`), with regression tests locking both behaviors.
+- **Launch Window Fix & UI Refinements (`TitizApp.swift`, `MenuBarController.swift`, `MainPopoverView.swift`, `LiquidGlassSurface.swift`, `SettingsView.swift`, `HistoryView.swift`):**
+  - Replaced SwiftUI `Settings { EmptyView() }` wrapper with pure AppKit `@main` `TitizAppMain` (`NSApplication.shared.setActivationPolicy(.accessory)`) and `MenuBarController.showPopover()`, eliminating the stray blank `Titiz Ayarları` launch window.
+  - Redesigned header mode controls into a left segmented `Karakter | Yazım` control paired with a separate `Çift Mod` button on the right, styled with `#702D38` broken burgundy palette accents (`TitizBrandColors`).
+  - Separated History (`clock.arrow.circlepath`) and Settings (`gearshape`) icon pills cleanly (`spacing: 10`), moved the `"Çıkış"` button onto the main popover footer left, and updated history badge labels from `"Düzelt"` to `"Çift Mod"`.
+- **Verification Results:**
+  - `swift build` — Passed (`exit 0`, 0 errors, 0 Swift compiler warnings).
+  - `swift test` — Passed (`exit 0`, **50 / 50 tests** in 9 suites passed in 4.889 seconds).
+  - `swift run -c release TitizEval --enforce-gates` (Release, 60 dev cases) — Passed ALL gates (`exit 0`):
+    - False-Positive Corruption: `0.00% (0/340)` overall, `0.00% (0/123)` clean subset.
+    - Protected Entity / Foreign Retention: `100.00% (48/48)`.
+    - True Error Recall (Bucket 1): `100.00% (70/70)`; Overall In-Scope Recall: `99.24% (131/132)`; Edit Precision: `100.00% (131/131)`.
+    - Release Latency (`.combined`, 50 runs): Short (`273` chars) `p50 = 0.640 ms / p95 = 0.786 ms`; Long (`1926` chars) `p50 = 5.843 ms / p95 = 6.138 ms`.
+  - `./scripts/bundle-app.sh` — Passed (`exit 0`); rebuilt `dist/Titiz.app`, `dist/Titiz-0.1.0-macOS.zip` (`19M`, SHA-256: `a1928f0d3e993ad312e9ff2249aa3b7481d286d3c9fa8da4540d1476ddf87748`), and `dist/Titiz-0.1.0-macOS.dmg` (`21M`, SHA-256: `e45f4c6465e482fc1bc49df7a21c813a444e0aef3c0de5398295f85d26d9dc18`).
+  - **Direct Bundle Launch Check:** Launched `dist/Titiz.app/Contents/MacOS/TitizApp` directly (`task-1082`, `type="UIElement"`); verified empty stderr log and 0 active macOS windows via `CGWindowListCopyWindowInfo` before stopping the test daemon.
+- `SPEC.md` — Verified present and unmodified.

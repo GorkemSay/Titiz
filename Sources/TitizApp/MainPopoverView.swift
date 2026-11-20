@@ -1,7 +1,8 @@
+import AppKit
 import SwiftUI
 import TitizCore
 
-/// Primary 500 px wide menu bar popover container hosting header controls, editor canvas,
+/// Primary 520 px wide menu bar popover container hosting header controls, editor canvas,
 /// selection "Bu adı hep koru" pill, edit-detail popover, footer, history, and settings.
 struct MainPopoverView: View {
     @Bindable var state: TitizAppState
@@ -26,7 +27,7 @@ struct MainPopoverView: View {
             }
         }
         .padding(16)
-        .frame(width: 500)
+        .frame(width: 520)
     }
 
     @ViewBuilder
@@ -118,57 +119,91 @@ struct MainPopoverView: View {
 
     @ViewBuilder
     private var headerBar: some View {
-        TitizGlassGroup(spacing: 8) {
+        HStack(spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: "text.badge.checkmark")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(TitizBrandColors.burgundyHighlight)
+
+                Text("Titiz")
+                    .font(.system(.headline, weight: .semibold))
+            }
+
+            Spacer(minLength: 8)
+
+            modePicker
+
             HStack(spacing: 10) {
-                HStack(spacing: 6) {
-                    Image(systemName: "text.badge.checkmark")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.tint)
-
-                    Text("Titiz")
-                        .font(.system(.headline, weight: .semibold))
+                Button {
+                    state.historyEntries = state.historyStore.entries
+                    state.subpanel = .history
+                } label: {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 12.5, weight: .medium))
+                        .frame(width: 28, height: 28)
                 }
+                .buttonStyle(.plain)
+                .titizGlassPill(interactive: true)
+                .help("Son 5 Düzeltme")
 
-                Spacer()
-
-                modePicker
-
-                HStack(spacing: 4) {
-                    Button {
-                        state.historyEntries = state.historyStore.entries
-                        state.subpanel = .history
-                    } label: {
-                        Image(systemName: "clock.arrow.circlepath")
-                            .frame(width: 26, height: 24)
-                    }
-                    .buttonStyle(.borderless)
-                    .titizGlassPill(interactive: true)
-                    .help("Son 5 Düzeltme")
-
-                    Button {
-                        state.personalEntries = state.engine.personalDictionaryStore.entries
-                        state.subpanel = .settings
-                    } label: {
-                        Image(systemName: "gearshape")
-                            .frame(width: 26, height: 24)
-                    }
-                    .buttonStyle(.borderless)
-                    .titizGlassPill(interactive: true)
-                    .help("Ayarlar ve Kişisel Sözlük")
+                Button {
+                    state.personalEntries = state.engine.personalDictionaryStore.entries
+                    state.subpanel = .settings
+                } label: {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 12.5, weight: .medium))
+                        .frame(width: 28, height: 28)
                 }
+                .buttonStyle(.plain)
+                .titizGlassPill(interactive: true)
+                .help("Ayarlar ve Kişisel Sözlük")
             }
         }
     }
 
     @ViewBuilder
     private var modePicker: some View {
-        HStack(spacing: 2) {
-            modeChip(.combined, title: "Düzelt")
-            modeChip(.character, title: "Karakter")
-            modeChip(.spelling, title: "Yazım")
+        HStack(spacing: 8) {
+            HStack(spacing: 2) {
+                modeChip(.character, title: "Karakter")
+                modeChip(.spelling, title: "Yazım")
+            }
+            .padding(3)
+            .background(
+                Capsule()
+                    .fill(TitizBrandColors.burgundyTint)
+                    .overlay(
+                        Capsule()
+                            .strokeBorder(TitizBrandColors.burgundyHighlight.opacity(0.45), lineWidth: 0.75)
+                    )
+            )
+            .titizGlassPill(interactive: true)
+
+            Button {
+                state.selectedMode = .combined
+            } label: {
+                let isSelected = state.selectedMode == .combined
+                Text("Çift Mod")
+                    .font(.caption.weight(isSelected ? .semibold : .medium))
+                    .foregroundStyle(isSelected ? .white : .primary.opacity(0.9))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(isSelected ? TitizBrandColors.burgundy : TitizBrandColors.burgundyTint)
+                            .overlay(
+                                Capsule()
+                                    .strokeBorder(
+                                        TitizBrandColors.burgundyHighlight.opacity(isSelected ? 0.9 : 0.45),
+                                        lineWidth: 0.85
+                                    )
+                            )
+                    )
+            }
+            .buttonStyle(.plain)
+            .titizGlassPill(interactive: true)
+            .help("Karakter ve Yazım düzeltmelerini birlikte uygula")
         }
-        .padding(3)
-        .titizGlassPill(interactive: true)
     }
 
     @ViewBuilder
@@ -178,13 +213,20 @@ struct MainPopoverView: View {
             state.selectedMode = mode
         } label: {
             Text(title)
-                .font(.caption.weight(isSelected ? .semibold : .regular))
-                .foregroundStyle(isSelected ? .primary : .secondary)
+                .font(.caption.weight(isSelected ? .semibold : .medium))
+                .foregroundStyle(isSelected ? .white : .primary.opacity(0.88))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
                 .background(
                     Capsule()
-                        .fill(isSelected ? Color(nsColor: .controlAccentColor).opacity(0.16) : Color.clear)
+                        .fill(isSelected ? TitizBrandColors.burgundy : Color.clear)
+                        .overlay(
+                            Capsule()
+                                .strokeBorder(
+                                    isSelected ? TitizBrandColors.burgundyHighlight.opacity(0.85) : Color.clear,
+                                    lineWidth: 0.75
+                                )
+                        )
                 )
         }
         .buttonStyle(.plain)
@@ -192,12 +234,28 @@ struct MainPopoverView: View {
 
     @ViewBuilder
     private var footerBar: some View {
-        TitizGlassGroup(spacing: 8) {
+        TitizGlassGroup(spacing: 10) {
             HStack(spacing: 10) {
-                Text(state.formattedStatusSummary)
-                    .font(.caption)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    Button {
+                        NSApplication.shared.terminate(nil)
+                    } label: {
+                        Label("Çıkış", systemImage: "power")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Titiz'den Çık")
+
+                    Text("·")
+                        .font(.caption)
+                        .foregroundStyle(.quaternary)
+
+                    Text(state.formattedStatusSummary)
+                        .font(.caption)
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                }
 
                 Spacer()
 
@@ -224,6 +282,7 @@ struct MainPopoverView: View {
                         .padding(.vertical, 6)
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(TitizBrandColors.burgundy)
                 .clipShape(Capsule())
                 .disabled(state.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 .keyboardShortcut(.return, modifiers: .command)

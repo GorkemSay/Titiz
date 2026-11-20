@@ -99,7 +99,7 @@ struct HistoryView: View {
 
     private func modeLabel(_ mode: CorrectionMode) -> String {
         switch mode {
-        case .combined: return "Düzelt"
+        case .combined: return "Çift Mod"
         case .character: return "Karakter"
         case .spelling: return "Yazım"
         }

@@ -70,12 +70,26 @@ public enum QuestionCliticSplitter {
         "gol": .frontRounded
     ]
 
+    /// Known 1st-person possessive + accusative participle/noun endings that frequently collide with `-mi/-mı` stems.
+    private static let participlePossessiveAccusativeSuffixes: [String] = [
+        "diğimi", "dığımı", "duğumu", "düğümü",
+        "tiğimi", "tığımı", "tuğumu", "tüğümü",
+        "eceğimi", "acağımı"
+    ]
+
+    /// Over-permissive Hunspell verbal truncations (`varm`, `yokm`) that accept invalid fused clitics.
+    /// None of these are valid Turkish single words in TDK orthography.
+    private static let knownOverpermissiveClitics: Set<String> = [
+        "varmı", "varmi", "yokmu"
+    ]
+
     /// Attempts to split a fused word ending in a Turkish question clitic.
     /// Returns `(replacement: "<stem> <clitic>", ruleID: ...)` when safe and high-confidence, or `nil`.
     public static func splitIfApplicable(
         word: String,
         inSentence sentence: String,
         wordRange: Range<String.Index>,
+        followedByQuestionMark: Bool = false,
         enableJointDeasciify: Bool,
         dictionary: HunspellDictionary,
         gpaScorer: GPAScorer,
@@ -99,13 +113,24 @@ public enum QuestionCliticSplitter {
             return nil
         }
 
-        // Never split real Turkish whole words: protect curated whole words, and only consider
-        // Hunspell-accepted forms when rare/absent in clean corpus (`unigram <= -5.5`, which
-        // catches over-permissive hunspell-tr clitic forms such as `varmı` [-6.22] and `çıktımı` [-8.20]
-        // while keeping legitimate nouns like `ekonomi` [-3.99], `yapımı` [-3.86], `durumu` [-3.61] safe).
-        let isHunspellValid = CandidateGenerator.isValidTurkishWord(nfc, dictionary: dictionary)
-        if isHunspellValid && frequencyTable.unigramLog10(lowered) > -5.5 {
+        if Self.participlePossessiveAccusativeSuffixes.contains(where: { lowered.hasSuffix($0) }) {
             return nil
+        }
+
+        // Never split real Turkish whole words: when Hunspell accepts `nfc`, only split if:
+        //  (a) it is a known over-permissive Hunspell verbal truncation (`varmı`, `varmi`, `yokmu`), OR
+        //  (b) the token is immediately followed by `?` and completely unseen in 8M clean corpus (`unigram <= -7.5`, catching `çıktımı ?`).
+        let isHunspellValid = CandidateGenerator.isValidTurkishWord(nfc, dictionary: dictionary)
+        if isHunspellValid && !Self.knownOverpermissiveClitics.contains(lowered) {
+            let unigram = frequencyTable.unigramLog10(lowered)
+            let stemWithoutFinalVowel = String(nfc.dropLast())
+            let looksLikePossessiveMStem = CandidateGenerator.isValidTurkishWord(stemWithoutFinalVowel, dictionary: dictionary)
+
+            let allowSplitForNonPossessive = !looksLikePossessiveMStem && unigram <= -5.5
+            let allowSplitForQuestionMarkedUnseen = followedByQuestionMark && unigram <= -7.5
+            guard allowSplitForNonPossessive || allowSplitForQuestionMarkedUnseen else {
+                return nil
+            }
         }
 
         if enableJointDeasciify && !isHunspellValid {

@@ -73,10 +73,12 @@ public struct SpellingEngine: Sendable {
                         continue
                     }
 
+                    let hasTrailingQuestionMark = isImmediatelyFollowedByQuestionMark(after: index, in: tokens)
                     if let cliticSplit = QuestionCliticSplitter.splitIfApplicable(
                         word: token.text,
                         inSentence: normalizedText,
                         wordRange: token.range,
+                        followedByQuestionMark: hasTrailingQuestionMark,
                         enableJointDeasciify: enableJointDeasciify,
                         dictionary: dictionary,
                         gpaScorer: gpaScorer,
@@ -281,6 +283,22 @@ public struct SpellingEngine: Sendable {
             }
         }
         return true
+    }
+
+    private func isImmediatelyFollowedByQuestionMark(after index: Int, in tokens: [Token]) -> Bool {
+        var cursor = index + 1
+        while cursor < tokens.count {
+            let tok = tokens[cursor]
+            if tok.kind == .whitespace {
+                if tok.text.contains(where: \.isNewline) {
+                    return false
+                }
+                cursor += 1
+                continue
+            }
+            return tok.kind == .punctuation && tok.text == "?"
+        }
+        return false
     }
 
     private func isAbbreviationPeriod(at periodIndex: Int, in tokens: [Token]) -> Bool {

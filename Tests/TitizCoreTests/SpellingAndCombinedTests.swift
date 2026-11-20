@@ -140,6 +140,29 @@ struct SpellingAndCombinedTests {
         let wholeWords = Self.engine.correct("uretimi ve cozumu ile bolumu gelistirdik.", mode: .combined)
         #expect(wholeWords.correctedText == "Üretimi ve çözümü ile bölümü geliştirdik.")
         verifyEditRanges(wholeWords)
+
+        // Participle & 1st-person possessive+accusative forms (-diğimi/-tığımı/-ımı) must NEVER split as question clitics
+        let userReportedInput = "Arkadaslarimla konusurken Intel islemci almaya karar verdigimi soyledim ama emin olamadim."
+        let userReportedExpected = "Arkadaşlarımla konuşurken Intel işlemci almaya karar verdiğimi söyledim ama emin olamadım."
+        let userCombined = Self.engine.correct(userReportedInput, mode: .combined)
+        #expect(userCombined.correctedText == userReportedExpected)
+        verifyEditRanges(userCombined)
+
+        let preservedPossessives = [
+            "Arkadaşlarımla konuşurken Intel işlemci almaya karar verdiğimi söyledim ama emin olamadım.",
+            "Yazıcıdan çıktımı aldım.",
+            "Ne söylediğimi ve ne yaptığımı biliyorum.",
+            "Kararımı ve arkadaşımı aradım.",
+            "Geleceğimi ve gördüğümü anlattım."
+        ]
+        for sentence in preservedPossessives {
+            let spellResult = Self.engine.correct(sentence, mode: .spelling)
+            #expect(spellResult.correctedText == sentence)
+            #expect(spellResult.edits.isEmpty)
+
+            let combResult = Self.engine.correct(sentence, mode: .combined)
+            #expect(combResult.correctedText == sentence)
+        }
     }
 
     @Test("Exact UTF-16 Edit provenance ranges hold under NFD input across all modes")
