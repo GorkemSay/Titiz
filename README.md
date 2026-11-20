@@ -24,9 +24,9 @@
 Titiz'in en öncelikli mühendislik kuralı **hassasiyeti (precision) her zaman kapsamın (recall) önünde tutmaktır**. Bağlam belirsizse uygulama tahmin yürütmek yerine özgün metni korur.
 
 - **Hedef örnek:**
-  - Girdi: `Intel ekibinden MaviKutu icin cevap geldimi?`
-  - Çıktı: `Intel ekibinden MaviKutu için cevap geldi mi?`
-  - (`Intel` yerleşik koruma listesiyle, `MaviKutu` yapısal CamelCase algılaması ve Kişisel Sözlük ile korunur; `icin → için` ve `geldimi → geldi mi` güvenle düzeltilir.)
+  - Girdi: `Dune Part Three 18 Aralik'ta cikiyor ama ayni gun gitsem mi bilemedim ne dersin?`
+  - Çıktı: `Dune Part Three 18 Aralık'ta çıkıyor ama aynı gün gitsem mi bilemedim ne dersin?`
+  - (`Dune Part Three` yabancı özel ad/film başlığı ve `18` sayısı korunur; `Aralik'ta → Aralık'ta`, `cikiyor → çıkıyor`, `ayni → aynı` ve bağlama bağlı `gun → gün` güvenle düzeltilir, doğru yazılmış `gitsem mi` bozulmaz.)
 - **Özel Adlar ve Teknik Terimler:** `Intel` cümle başında bile `Intel` olarak kalır (asla `İntel` olmaz). `driver`, `feedback`, `"Search"` gibi İngilizce ve teknik ifadeler olduğu gibi korunur.
 - **Üsluba Dokunmaz:** Metni yeniden yazmaz veya anlamı değiştirmez (`Gönder` hiçbir zaman `gönderin` yapılmaz).
 - **Yabancı Kök + Türkçe Ek Koruması:** `Apple'da`, `iPhone'u`, `GitHub'ta` gibi okunuşa göre gelen Türkçe eklerin ünlü uyumu otomatik değiştirilmez. `loglarini` gibi yabancı kök + ek birleşimleri belirsizse dokunulmadan bırakılır.
