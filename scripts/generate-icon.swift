@@ -2,7 +2,6 @@
 
 import AppKit
 import CoreGraphics
-import CoreText
 import Foundation
 import SwiftUI
 
@@ -16,38 +15,155 @@ private func makeSquirclePath(in rect: CGRect, cornerRadius: CGFloat) -> CGPath 
         .cgPath
 }
 
-private func makeLetterTPath(centeredAt center: CGPoint, targetHeight: CGFloat) -> CGPath? {
-    // Use an optical text/subheading point size (44pt) before scaling the vector outline so
-    // Apple New York keeps sturdy crossbar joints instead of ultra-thin 560pt display hairlines.
-    let baseFont = NSFont.systemFont(ofSize: 44, weight: .bold)
-    let font: NSFont
-    if let serifDescriptor = baseFont.fontDescriptor.withDesign(.serif),
-       let serifFont = NSFont(descriptor: serifDescriptor, size: 44) {
-        font = serifFont
-    } else if let georgia = NSFont(name: "Georgia-Bold", size: 44) {
-        font = georgia
-    } else {
-        font = baseFont
+private func addPillPath(_ path: CGMutablePath, rect: CGRect, radius: CGFloat? = nil) {
+    let r = radius ?? min(rect.width, rect.height) * 0.5
+    path.addRoundedRect(in: rect, cornerWidth: r, cornerHeight: r)
+}
+
+/// Builds the counter-clockwise vertical shaft + curved Ionic capital cushion + neck contour.
+private func makeShaftAndCapitalBodyPath() -> CGPath {
+    let path = CGMutablePath()
+    // Base junction (y = 322, halfWidth = 74) -> subtle classical entasis up to neck (y = 616, halfWidth = 64)
+    path.move(to: CGPoint(x: 438, y: 322))
+    path.addLine(to: CGPoint(x: 586, y: 322))
+
+    // Right flank of shaft with subtle outward entasis
+    path.addCurve(
+        to: CGPoint(x: 576, y: 616),
+        control1: CGPoint(x: 586, y: 420),
+        control2: CGPoint(x: 580, y: 530)
+    )
+    // Flair outward smoothly into the extended Ionic volutes forming the T crossbar
+    path.addCurve(
+        to: CGPoint(x: 698, y: 604),
+        control1: CGPoint(x: 592, y: 644),
+        control2: CGPoint(x: 642, y: 610)
+    )
+    path.addLine(to: CGPoint(x: 698, y: 740))
+    path.addLine(to: CGPoint(x: 326, y: 740))
+    path.addLine(to: CGPoint(x: 326, y: 604))
+    // Mirror flair from the left volute back into the left column neck
+    path.addCurve(
+        to: CGPoint(x: 448, y: 616),
+        control1: CGPoint(x: 382, y: 610),
+        control2: CGPoint(x: 432, y: 644)
+    )
+    // Left flank of shaft descending to base
+    path.addCurve(
+        to: CGPoint(x: 438, y: 322),
+        control1: CGPoint(x: 444, y: 530),
+        control2: CGPoint(x: 438, y: 420)
+    )
+    path.closeSubpath()
+    return path
+}
+
+/// Unified counter-clockwise silhouette of the Ionic Marble Column "T":
+/// abacus slab, twin extended inward-curling volutes, necking collar, entasis shaft, and Attic stepped base.
+private func makeIonicColumnTSilhouette() -> CGPath {
+    let silhouette = CGMutablePath()
+
+    // Main shaft + capital bridge
+    silhouette.addPath(makeShaftAndCapitalBodyPath())
+
+    // Twin extended volute circular medallions extending cleanly beyond the central crown to form T's curled arms
+    let voluteRadius: CGFloat = 68
+    silhouette.addEllipse(in: CGRect(
+        x: 326 - voluteRadius,
+        y: 672 - voluteRadius,
+        width: voluteRadius * 2,
+        height: voluteRadius * 2
+    ))
+    silhouette.addEllipse(in: CGRect(
+        x: 698 - voluteRadius,
+        y: 672 - voluteRadius,
+        width: voluteRadius * 2,
+        height: voluteRadius * 2
+    ))
+
+    // Refined central Ionic abacus molding flush between volute centers (`x: 326...698`) so there are no detached corner wedges
+    addPillPath(silhouette, rect: CGRect(x: 324, y: 738, width: 376, height: 22), radius: 7)
+
+    // Astragal / necking collar bridging the capital to the column shaft
+    addPillPath(silhouette, rect: CGRect(x: 432, y: 612, width: 160, height: 22), radius: 11)
+
+    // Attic stepped pedestal base forming the grounded serif foot of T
+    addPillPath(silhouette, rect: CGRect(x: 424, y: 304, width: 176, height: 22), radius: 11)
+    addPillPath(silhouette, rect: CGRect(x: 434, y: 284, width: 156, height: 22), radius: 7)
+    addPillPath(silhouette, rect: CGRect(x: 396, y: 260, width: 232, height: 28), radius: 7)
+
+    return silhouette
+}
+
+/// Builds a closed tapered groove ribbon that glides horizontally from center along the top canalis
+/// and spirals inward 2.15 turns into the volute eye (`mirrored` flips across `x = 512`).
+private func makeVoluteSpiralGroovePath(mirrored: Bool) -> CGPath {
+    let center = CGPoint(x: 326, y: 672)
+    var samples: [(point: CGPoint, halfWidth: CGFloat)] = []
+
+    // 1. Horizontal entry along top of the canalis (x = 512 -> 326, y = 724)
+    let bridgeSteps = 18
+    for i in 0..<bridgeSteps {
+        let t = CGFloat(i) / CGFloat(bridgeSteps)
+        let x = 512 - t * (512 - 328)
+        let y: CGFloat = 724
+        samples.append((CGPoint(x: x, y: y), 4.8))
     }
 
-    let ctFont = font as CTFont
-    var chars: [UniChar] = Array("T".utf16)
-    var glyphs: [CGGlyph] = [0]
-    guard CTFontGetGlyphsForCharacters(ctFont, &chars, &glyphs, chars.count),
-          let rawPath = CTFontCreatePathForGlyph(ctFont, glyphs[0], nil) else {
-        return nil
+    // 2. Smooth inward spiral around left volute center (theta = pi/2 .. pi/2 + 2.08 * 2pi)
+    let spiralSteps = 160
+    let startAngle = CGFloat.pi * 0.5
+    let totalSweep = CGFloat.pi * 2.0 * 2.08
+    let rStart: CGFloat = 52.0
+    let rEnd: CGFloat = 10.5
+
+    for i in 0...spiralSteps {
+        let u = CGFloat(i) / CGFloat(spiralSteps)
+        let angle = startAngle + u * totalSweep
+        // Slightly front-loaded contraction gives classic balanced scroll spacing
+        let r = rStart * pow(rEnd / rStart, pow(u, 0.96))
+        let pt = CGPoint(
+            x: center.x + r * cos(angle),
+            y: center.y + r * sin(angle)
+        )
+        let halfW = 4.8 - u * 2.3
+        samples.append((pt, halfW))
     }
 
-    let bounds = rawPath.boundingBoxOfPath
-    guard bounds.height > 0, bounds.width > 0 else { return nil }
+    var leftEdge: [CGPoint] = []
+    var rightEdge: [CGPoint] = []
+    leftEdge.reserveCapacity(samples.count)
+    rightEdge.reserveCapacity(samples.count)
 
-    let scale = targetHeight / bounds.height
-    var transform = CGAffineTransform.identity
-    transform = transform.translatedBy(x: center.x, y: center.y)
-    transform = transform.scaledBy(x: scale, y: scale)
-    transform = transform.translatedBy(x: -bounds.midX, y: -bounds.midY)
+    for idx in samples.indices {
+        let p = samples[idx].point
+        let prev = samples[max(0, idx - 1)].point
+        let next = samples[min(samples.count - 1, idx + 1)].point
+        let dx = next.x - prev.x
+        let dy = next.y - prev.y
+        let len = max(0.0001, hypot(dx, dy))
+        let nx = -dy / len
+        let ny = dx / len
+        let w = samples[idx].halfWidth
+        leftEdge.append(CGPoint(x: p.x + nx * w, y: p.y + ny * w))
+        rightEdge.append(CGPoint(x: p.x - nx * w, y: p.y - ny * w))
+    }
 
-    return rawPath.copy(using: &transform)
+    func mapPoint(_ p: CGPoint) -> CGPoint {
+        mirrored ? CGPoint(x: 1024 - p.x, y: p.y) : p
+    }
+
+    let path = CGMutablePath()
+    guard let firstL = leftEdge.first else { return path }
+    path.move(to: mapPoint(firstL))
+    for p in leftEdge.dropFirst() {
+        path.addLine(to: mapPoint(p))
+    }
+    for p in rightEdge.reversed() {
+        path.addLine(to: mapPoint(p))
+    }
+    path.closeSubpath()
+    return path
 }
 
 private func renderTitizIconPNG(pixelSize: Int, to url: URL) throws {
@@ -163,63 +279,168 @@ private func renderTitizIconPNG(pixelSize: Int, to url: URL) throws {
     }
     ctx.restoreGState()
 
-    // 4. Sculpted New York serif "T" in broken marble white (#EFEAE1)
-    if let letterPath = makeLetterTPath(centeredAt: CGPoint(x: 512, y: 506), targetHeight: 462) {
-        // Warm deep shadow beneath the marble letterform
-        ctx.saveGState()
-        ctx.setShadow(
-            offset: CGSize(width: 0, height: -10 * scale),
-            blur: 18 * scale,
-            color: rgbaColor(38, 10, 16, 0.36)
+    // 4. Sculpted Ionic Greek marble column forming "T" in broken marble white (#EFEAE1)
+    let columnSilhouette = makeIonicColumnTSilhouette()
+    let columnBounds = columnSilhouette.boundingBoxOfPath
+
+    // Warm burgundy drop shadow beneath unified column silhouette
+    ctx.saveGState()
+    ctx.setShadow(
+        offset: CGSize(width: 0, height: -10 * scale),
+        blur: 18 * scale,
+        color: rgbaColor(36, 9, 15, 0.38)
+    )
+    ctx.addPath(columnSilhouette)
+    ctx.setFillColor(rgbaColor(239, 234, 225))
+    ctx.fillPath(using: .winding)
+    ctx.restoreGState()
+
+    // Clip to column silhouette and render marble surface + carved architectural details
+    ctx.saveGState()
+    ctx.addPath(columnSilhouette)
+    ctx.clip(using: .winding)
+
+    let marbleColors = [
+        rgbaColor(248, 244, 237), // Top: #F8F4ED
+        rgbaColor(239, 234, 225), // Mid: #EFEAE1
+        rgbaColor(223, 215, 202)  // Bottom: #DFD7CA
+    ] as CFArray
+    if let marbleGradient = CGGradient(colorsSpace: colorSpace, colors: marbleColors, locations: [0.0, 0.48, 1.0]) {
+        ctx.drawLinearGradient(
+            marbleGradient,
+            start: CGPoint(x: columnBounds.midX, y: columnBounds.maxY),
+            end: CGPoint(x: columnBounds.midX, y: columnBounds.minY),
+            options: [.drawsBeforeStartLocation, .drawsAfterEndLocation]
         )
-        ctx.addPath(letterPath)
-        ctx.setFillColor(rgbaColor(239, 234, 225))
-        ctx.fillPath()
-        ctx.restoreGState()
+    }
 
-        // Broken marble white vertical gradient fill
-        let letterBounds = letterPath.boundingBoxOfPath
+    // Subtle cylindrical 3D curvature shading restricted strictly to the vertical shaft
+    let cylinderColors = [
+        rgbaColor(196, 184, 170, 0.24),
+        rgbaColor(255, 255, 255, 0.14),
+        rgbaColor(196, 184, 170, 0.24)
+    ] as CFArray
+    if let cylinderGradient = CGGradient(colorsSpace: colorSpace, colors: cylinderColors, locations: [0.0, 0.45, 1.0]) {
         ctx.saveGState()
-        ctx.addPath(letterPath)
-        ctx.clip()
-
-        let marbleColors = [
-            rgbaColor(247, 243, 236), // Top: #F7F3EC
-            rgbaColor(239, 234, 225), // Mid: #EFEAE1
-            rgbaColor(227, 220, 208)  // Bottom: #E3DCD0
-        ] as CFArray
-        if let marbleGradient = CGGradient(colorsSpace: colorSpace, colors: marbleColors, locations: [0.0, 0.48, 1.0]) {
-            ctx.drawLinearGradient(
-                marbleGradient,
-                start: CGPoint(x: letterBounds.midX, y: letterBounds.maxY),
-                end: CGPoint(x: letterBounds.midX, y: letterBounds.minY),
-                options: [.drawsBeforeStartLocation, .drawsAfterEndLocation]
-            )
-        }
-
-        // Crisp subtle top light bevel inside the T outline
-        let letterHighlightBand = letterPath.copy(
-            strokingWithWidth: 2.2,
-            lineCap: .round,
-            lineJoin: .round,
-            miterLimit: 10.0
+        ctx.clip(to: CGRect(x: 420, y: 324, width: 184, height: 292))
+        ctx.drawLinearGradient(
+            cylinderGradient,
+            start: CGPoint(x: 432, y: 470),
+            end: CGPoint(x: 592, y: 470),
+            options: [.drawsBeforeStartLocation, .drawsAfterEndLocation]
         )
-        ctx.addPath(letterHighlightBand)
-        ctx.clip()
-        let bevelColors = [
-            rgbaColor(255, 255, 255, 0.35),
-            rgbaColor(255, 255, 255, 0.0)
-        ] as CFArray
-        if let bevelGradient = CGGradient(colorsSpace: colorSpace, colors: bevelColors, locations: [0.0, 1.0]) {
-            ctx.drawLinearGradient(
-                bevelGradient,
-                start: CGPoint(x: letterBounds.midX, y: letterBounds.maxY),
-                end: CGPoint(x: letterBounds.midX, y: letterBounds.midY),
-                options: []
-            )
-        }
         ctx.restoreGState()
     }
+
+    // Horizontal architectural molding creases (abacus seam, lower canalis curve, collar & base tiers)
+    let grooveColor = rgbaColor(106, 40, 51, 0.56)
+    let softGrooveColor = rgbaColor(106, 40, 51, 0.42)
+
+    // Center abacus underside seam seamlessly blending into both volute tops
+    ctx.setStrokeColor(softGrooveColor)
+    ctx.setLineWidth(4.0)
+    ctx.setLineCap(.round)
+    ctx.move(to: CGPoint(x: 332, y: 738))
+    ctx.addLine(to: CGPoint(x: 692, y: 738))
+    ctx.strokePath()
+
+    // Graceful cushioned lower canalis arch connecting the lower volute curls smoothly across center
+    ctx.setStrokeColor(softGrooveColor)
+    ctx.setLineWidth(4.0)
+    ctx.move(to: CGPoint(x: 374, y: 650))
+    ctx.addCurve(
+        to: CGPoint(x: 650, y: 650),
+        control1: CGPoint(x: 448, y: 662),
+        control2: CGPoint(x: 576, y: 662)
+    )
+    ctx.strokePath()
+
+    // Necking / astragal molding grooves bridging capital to shaft
+    for grooveY in [CGFloat(634), CGFloat(612)] {
+        ctx.setStrokeColor(grooveColor)
+        ctx.setLineWidth(4.0)
+        ctx.move(to: CGPoint(x: 444, y: grooveY))
+        ctx.addLine(to: CGPoint(x: 580, y: grooveY))
+        ctx.strokePath()
+    }
+
+    // Attic stepped base tier seams (inset inside rounded corners)
+    ctx.setStrokeColor(softGrooveColor)
+    ctx.setLineWidth(3.8)
+    ctx.move(to: CGPoint(x: 436, y: 324))
+    ctx.addLine(to: CGPoint(x: 588, y: 324))
+    ctx.strokePath()
+
+    ctx.move(to: CGPoint(x: 438, y: 304))
+    ctx.addLine(to: CGPoint(x: 586, y: 304))
+    ctx.strokePath()
+
+    ctx.move(to: CGPoint(x: 440, y: 286))
+    ctx.addLine(to: CGPoint(x: 584, y: 286))
+    ctx.strokePath()
+
+    // Twin inward-curling Ionic volute spirals extending outward as T arms
+    let spiralFill = rgbaColor(104, 38, 49, 0.78)
+    for isMirrored in [false, true] {
+        let spiralPath = makeVoluteSpiralGroovePath(mirrored: isMirrored)
+        ctx.addPath(spiralPath)
+        ctx.setFillColor(spiralFill)
+        ctx.fillPath()
+
+        // Carved circular eye (oculus) at the heart of each spiral
+        let eyeCenterX: CGFloat = isMirrored ? (1024 - 326) : 326
+        let eyeRadius: CGFloat = 10.5
+        let eyeRect = CGRect(
+            x: eyeCenterX - eyeRadius,
+            y: 672 - eyeRadius,
+            width: eyeRadius * 2,
+            height: eyeRadius * 2
+        )
+        ctx.setFillColor(spiralFill)
+        ctx.fillEllipse(in: eyeRect)
+    }
+
+    // 4 carved vertical marble flutes (concave channels along shaft)
+    let fluteOffsets: [(x: CGFloat, halfWidth: CGFloat)] = [
+        (-45, 8.5),
+        (-15.5, 9.5),
+        (15.5, 9.5),
+        (45, 8.5)
+    ]
+    let fluteColors = [
+        rgbaColor(108, 43, 54, 0.42),
+        rgbaColor(166, 138, 132, 0.18),
+        rgbaColor(255, 255, 255, 0.25)
+    ] as CFArray
+    if let fluteGradient = CGGradient(colorsSpace: colorSpace, colors: fluteColors, locations: [0.0, 0.55, 1.0]) {
+        for flute in fluteOffsets {
+            let fx = 512 + flute.x
+            let fluteRect = CGRect(
+                x: fx - flute.halfWidth,
+                y: 342,
+                width: flute.halfWidth * 2,
+                height: 254
+            )
+            let flutePath = CGPath(
+                roundedRect: fluteRect,
+                cornerWidth: flute.halfWidth,
+                cornerHeight: flute.halfWidth,
+                transform: nil
+            )
+            ctx.saveGState()
+            ctx.addPath(flutePath)
+            ctx.clip()
+            ctx.drawLinearGradient(
+                fluteGradient,
+                start: CGPoint(x: fluteRect.minX, y: fluteRect.midY),
+                end: CGPoint(x: fluteRect.maxX, y: fluteRect.midY),
+                options: []
+            )
+            ctx.restoreGState()
+        }
+    }
+
+    ctx.restoreGState() // unclip column silhouette
 
     ctx.restoreGState() // unclip squircle
     ctx.restoreGState() // unscale

@@ -114,7 +114,7 @@ swift run TitizApp
 
 - `Package.swift` dosyası dağıtım hedefini `macOS(.v14)` olarak tanımlar. macOS 26 ve üzeri sistemlerde `#available(macOS 26.0, *)` ile yerel Apple Liquid Glass API'leri, macOS 14–15 sistemlerde ise `.ultraThinMaterial` / `.regularMaterial` uyumlu görsel katman kullanılır.
 - **Uyumluluk Notu:** macOS 14–15 çalışma zamanı uyumluluğu hedeflenmektedir; ancak doğrudan macOS 14 ve 15 ortamlarında doğrulanana kadar test edilmemiş kabul edilmelidir.
-- **Uygulama Simgesi:** Titiz, macOS yuvarlatılmış kare (*squircle*) formunda kırık bordo (`#702D38`) zemin üzerine kırık mermer beyazı (`#EFEAE1`) **T** tipografisiyle tasarlanmış özel uygulama simgesini kullanır ([assets/titiz-logo.png](assets/titiz-logo.png), [assets/AppIcon.icns](assets/AppIcon.icns) ve [scripts/generate-icon.swift](scripts/generate-icon.swift)).
+- **Uygulama Simgesi:** Titiz; macOS yuvarlatılmış kare (*squircle*) formunda kırık bordo (`#702D38`) zemin üzerine, içe kıvrılan çift İyonik volütleri **T** harfinin yatay başlığını oluşturan kırık mermer beyazı (`#EFEAE1`) Yunan sütunu amblemini kullanır ([assets/titiz-logo.png](assets/titiz-logo.png), [assets/AppIcon.icns](assets/AppIcon.icns) ve [scripts/generate-icon.swift](scripts/generate-icon.swift)). Menü çubuğunda ise küçük boyut okunaklılığını korumak için sade tek renkli `T` şablon simgesi yer alır.
 
 ---
 

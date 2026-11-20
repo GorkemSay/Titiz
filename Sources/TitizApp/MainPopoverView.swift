@@ -121,7 +121,7 @@ struct MainPopoverView: View {
     private var headerBar: some View {
         HStack(spacing: 12) {
             HStack(spacing: 7) {
-                TitizLogoBadge(size: 22)
+                TitizLogoBadge(size: 24)
 
                 Text("Titiz")
                     .font(.system(.headline, weight: .semibold))
