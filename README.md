@@ -21,6 +21,14 @@ Menü çubuğundan açıp metni yapıştırın (`⌘V`), **"Düzelt"** (`⌘↩`
 
 ---
 
+## Ekran Görüntüleri
+
+| Giriş Menüsü | Ayarlar |
+| :---: | :---: |
+| <img src="assets/screenshot-main.png" alt="Titiz Giriş Menüsü" width="440" /> | <img src="assets/screenshot-settings.png" alt="Titiz Ayarlar ve Kişisel Sözlük" width="440" /> |
+
+---
+
 ## Neden Titiz?
 
 Metni baştan yazan veya internete gönderen üretken yapay zeka araçlarının ve katı sözlük denetleyicilerinin aksine Titiz, gündelik teknik/profesyonel Türkçe yazımı için tasarlanmıştır:
@@ -84,7 +92,7 @@ Titiz
 ├── Sources/CHunspell         # Gömülü C/C++ Hunspell motoru ve C köprü başlığı
 ├── Sources/TitizEval         # Geliştirme ve kör test seti ölçüm/gecikme CLI aracı
 ├── Tests/TitizCoreTests      # Birim ve regresyon test paketleri
-├── assets/                   # İyonik sütun `T` macOS uygulama simgesi (`AppIcon.icns`) ve logo (`titiz-logo.png`)
+├── assets/                   # İyonik sütun `T` macOS uygulama simgesi (`AppIcon.icns`), logo (`titiz-logo.png`) ve ekran görüntüleri
 └── scripts/                  # Çevrimdışı sözlük, simge ve `Titiz.app` / `.zip` / `.dmg` paketleme betikleri
 ```
 

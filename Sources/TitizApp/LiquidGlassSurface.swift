@@ -183,6 +183,71 @@ struct TitizLogoBadge: View {
     }
 }
 
+/// Vector-drawn capsule fill and inset border avoiding macOS `Capsule().strokeBorder` layer artifacts.
+struct TitizCapsuleBackground: View {
+    let fill: Color
+    let stroke: Color
+    var lineWidth: CGFloat = 0.75
+
+    var body: some View {
+        Canvas { context, size in
+            let rect = CGRect(origin: .zero, size: size)
+            guard rect.width > 0, rect.height > 0 else { return }
+            let radius = min(rect.width, rect.height) / 2
+            let fillPath = Path(roundedRect: rect, cornerRadius: radius, style: .circular)
+            context.fill(fillPath, with: .color(fill))
+
+            if lineWidth > 0 {
+                let inset = lineWidth / 2
+                let strokeRect = rect.insetBy(dx: inset, dy: inset)
+                let strokeRadius = max(0, min(strokeRect.width, strokeRect.height) / 2)
+                let strokePath = Path(roundedRect: strokeRect, cornerRadius: strokeRadius, style: .circular)
+                context.stroke(strokePath, with: .color(stroke), lineWidth: lineWidth)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+/// Primary burgundy call-to-action button style consistent across active/inactive and offscreen contexts.
+struct TitizPrimaryButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+    var cornerRadius: CGFloat? = nil
+    var horizontalPadding: CGFloat = 0
+    var verticalPadding: CGFloat = 0
+
+    func makeBody(configuration: Configuration) -> some View {
+        let fillColor = isEnabled
+            ? TitizBrandColors.burgundy
+            : TitizBrandColors.burgundy.opacity(0.42)
+        let strokeColor = isEnabled
+            ? TitizBrandColors.burgundyHighlight
+            : Color.white.opacity(0.10)
+
+        configuration.label
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
+            .foregroundStyle(isEnabled ? Color.white : Color.white.opacity(0.72))
+            .background {
+                if let cornerRadius {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(fillColor)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                                .strokeBorder(strokeColor, lineWidth: 0.75)
+                        )
+                } else {
+                    TitizCapsuleBackground(fill: fillColor, stroke: strokeColor, lineWidth: 0.75)
+                }
+            }
+            .contentShape(
+                cornerRadius.map { AnyShape(RoundedRectangle(cornerRadius: $0, style: .continuous)) }
+                    ?? AnyShape(Capsule())
+            )
+            .opacity(configuration.isPressed && isEnabled ? 0.85 : 1.0)
+    }
+}
+
 /// Groups interactive Liquid Glass controls on macOS 26+ so adjacent shapes blend authentically,
 /// falling back cleanly on macOS 14–15 or when Reduce Transparency is enabled.
 struct TitizGlassGroup<Content: View>: View {
@@ -244,6 +309,18 @@ private struct TitizSurfaceCardModifier: ViewModifier {
                 .background(.regularMaterial, in: shape)
                 .overlay(shape.strokeBorder(Color(nsColor: .separatorColor).opacity(0.65), lineWidth: 0.75))
         }
+    }
+}
+
+/// Interactive glass pill button style matching `TitizPrimaryButtonStyle` without `.plain` wrapper artifacts.
+struct TitizGlassPillButtonStyle: ButtonStyle {
+    var interactive: Bool = true
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .titizGlassPill(interactive: interactive)
+            .contentShape(Capsule())
+            .opacity(configuration.isPressed ? 0.85 : 1.0)
     }
 }
 

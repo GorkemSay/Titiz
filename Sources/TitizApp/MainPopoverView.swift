@@ -47,6 +47,7 @@ struct MainPopoverView: View {
                 onCopyAll: { state.copyToPasteboard() },
                 onRegisterTextView: onRegisterTextView
             )
+            .padding(.trailing, 22)
             .frame(height: 220)
 
             if state.text.isEmpty {
@@ -97,11 +98,11 @@ struct MainPopoverView: View {
                 } label: {
                     Label("Bu adı hep koru: “\(truncated(selection))”", systemImage: "shield.lefthalf.filled")
                         .font(.caption.weight(.medium))
+                        .foregroundStyle(.primary)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
                 }
-                .buttonStyle(.plain)
-                .titizGlassPill(interactive: true)
+                .buttonStyle(TitizGlassPillButtonStyle())
                 .padding(8)
             }
         }
@@ -138,10 +139,10 @@ struct MainPopoverView: View {
                 } label: {
                     Image(systemName: "clock.arrow.circlepath")
                         .font(.system(size: 12.5, weight: .medium))
+                        .foregroundStyle(.primary)
                         .frame(width: 28, height: 28)
                 }
-                .buttonStyle(.plain)
-                .titizGlassPill(interactive: true)
+                .buttonStyle(TitizGlassPillButtonStyle())
                 .help("Son 5 Düzeltme")
 
                 Button {
@@ -150,10 +151,10 @@ struct MainPopoverView: View {
                 } label: {
                     Image(systemName: "gearshape")
                         .font(.system(size: 12.5, weight: .medium))
+                        .foregroundStyle(.primary)
                         .frame(width: 28, height: 28)
                 }
-                .buttonStyle(.plain)
-                .titizGlassPill(interactive: true)
+                .buttonStyle(TitizGlassPillButtonStyle())
                 .help("Ayarlar ve Kişisel Sözlük")
             }
         }
@@ -168,12 +169,11 @@ struct MainPopoverView: View {
             }
             .padding(3)
             .background(
-                Capsule()
-                    .fill(TitizBrandColors.burgundyTint)
-                    .overlay(
-                        Capsule()
-                            .strokeBorder(TitizBrandColors.burgundyHighlight.opacity(0.45), lineWidth: 0.75)
-                    )
+                TitizCapsuleBackground(
+                    fill: TitizBrandColors.burgundyTint,
+                    stroke: TitizBrandColors.burgundyHighlight.opacity(0.45),
+                    lineWidth: 0.75
+                )
             )
             .titizGlassPill(interactive: true)
 
@@ -187,15 +187,11 @@ struct MainPopoverView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                     .background(
-                        Capsule()
-                            .fill(isSelected ? TitizBrandColors.burgundy : TitizBrandColors.burgundyTint)
-                            .overlay(
-                                Capsule()
-                                    .strokeBorder(
-                                        TitizBrandColors.burgundyHighlight.opacity(isSelected ? 0.9 : 0.45),
-                                        lineWidth: 0.85
-                                    )
-                            )
+                        TitizCapsuleBackground(
+                            fill: isSelected ? TitizBrandColors.burgundy : TitizBrandColors.burgundyTint,
+                            stroke: TitizBrandColors.burgundyHighlight.opacity(isSelected ? 0.9 : 0.45),
+                            lineWidth: 0.85
+                        )
                     )
             }
             .buttonStyle(.plain)
@@ -216,15 +212,11 @@ struct MainPopoverView: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
                 .background(
-                    Capsule()
-                        .fill(isSelected ? TitizBrandColors.burgundy : Color.clear)
-                        .overlay(
-                            Capsule()
-                                .strokeBorder(
-                                    isSelected ? TitizBrandColors.burgundyHighlight.opacity(0.85) : Color.clear,
-                                    lineWidth: 0.75
-                                )
-                        )
+                    TitizCapsuleBackground(
+                        fill: isSelected ? TitizBrandColors.burgundy : .clear,
+                        stroke: isSelected ? TitizBrandColors.burgundyHighlight.opacity(0.85) : .clear,
+                        lineWidth: isSelected ? 0.75 : 0
+                    )
                 )
         }
         .buttonStyle(.plain)
@@ -263,11 +255,12 @@ struct MainPopoverView: View {
                     Label(state.didJustCopy ? "Kopyalandı" : "Kopyala",
                           systemImage: state.didJustCopy ? "checkmark" : "doc.on.doc")
                         .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .opacity(state.text.isEmpty ? 0.45 : 1.0)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                 }
-                .buttonStyle(.plain)
-                .titizGlassPill(interactive: true)
+                .buttonStyle(TitizGlassPillButtonStyle())
                 .disabled(state.text.isEmpty)
                 .keyboardShortcut("c", modifiers: [.command, .shift])
 
@@ -279,9 +272,7 @@ struct MainPopoverView: View {
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(TitizBrandColors.burgundy)
-                .clipShape(Capsule())
+                .buttonStyle(TitizPrimaryButtonStyle())
                 .disabled(state.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 .keyboardShortcut(.return, modifiers: .command)
             }

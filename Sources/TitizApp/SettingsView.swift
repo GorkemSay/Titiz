@@ -27,8 +27,10 @@ struct SettingsView: View {
                 } label: {
                     Label("Düzenleyiciye Dön", systemImage: "chevron.left")
                         .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
                 }
-                .buttonStyle(.borderless)
+                .buttonStyle(.plain)
+                .contentShape(Rectangle())
 
                 Spacer()
 
@@ -52,7 +54,8 @@ struct SettingsView: View {
                     Button("Ekle") {
                         addTerm()
                     }
-                    .buttonStyle(.borderedProminent)
+                    .font(.subheadline.weight(.medium))
+                    .buttonStyle(TitizPrimaryButtonStyle(cornerRadius: 6, horizontalPadding: 10, verticalPadding: 4))
                     .controlSize(.small)
                     .disabled(newTerm.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
@@ -148,8 +151,8 @@ struct SettingsView: View {
                         Button("Güncellemeleri Denetle") {
                             state.checkForUpdates()
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(TitizBrandColors.burgundy)
+                        .font(.subheadline.weight(.medium))
+                        .buttonStyle(TitizPrimaryButtonStyle(cornerRadius: 6, horizontalPadding: 10, verticalPadding: 4))
                         .controlSize(.small)
                     }
 
@@ -193,8 +196,8 @@ struct SettingsView: View {
                         Button("Yükle") {
                             state.installAvailableUpdate(update)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(TitizBrandColors.burgundy)
+                        .font(.subheadline.weight(.medium))
+                        .buttonStyle(TitizPrimaryButtonStyle(cornerRadius: 6, horizontalPadding: 10, verticalPadding: 4))
                         .controlSize(.small)
                     }
 
