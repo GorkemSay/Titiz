@@ -15,6 +15,35 @@ public struct SpellingEngine: Sendable {
         ".", "!", "?", "…"
     ]
 
+    private static let clauseBoundaryPunctuation: Set<String> = [
+        ",", ";", ":", "—", "–"
+    ]
+
+    private static let clauseBoundaryConjunctions: Set<String> = [
+        "ama", "fakat", "ancak", "lakin", "çünkü", "cunku"
+    ]
+
+    private static let standaloneQuestionOperators: Set<String> = [
+        "mi", "mı", "mu", "mü",
+        "miyim", "mıyım", "muyum", "müyüm",
+        "misin", "mısın", "musun", "müsün",
+        "miyiz", "mıyız", "muyuz", "müyüz",
+        "misiniz", "mısınız", "musunuz", "müsünüz",
+        "miydi", "mıydı", "muydu", "müydü",
+        "miydim", "mıydım", "muydum", "müydüm",
+        "miydin", "mıydın", "muydun", "müydün",
+        "miydik", "mıydık", "muyduk", "müydük",
+        "miydiniz", "mıydınız", "muydunuz", "müydünüz",
+        "miymiş", "mıymış", "muymuş", "müymüş", "miymis", "muymus",
+        "miyse", "mıysa", "muysa", "müyse",
+        "midir", "mıdır", "mudur", "müdür",
+        "ne", "nasıl", "nasil", "neden", "niye", "niçin", "nicin",
+        "kim", "kimi", "kime", "kimde", "kimden", "kimin",
+        "nerede", "nereye", "nereden", "nere",
+        "hangi", "hangisi",
+        "kaç", "kac", "kaçıncı", "kacinci", "kaça", "kaca"
+    ]
+
     private let dictionary: HunspellDictionary
     private let gpaScorer: GPAScorer
     private let englishWordlist: EnglishWordlist
@@ -73,12 +102,12 @@ public struct SpellingEngine: Sendable {
                         continue
                     }
 
-                    let hasTrailingQuestionMark = isImmediatelyFollowedByQuestionMark(after: index, in: tokens)
+                    let qContext = questionContext(at: index, in: tokens)
                     if let cliticSplit = QuestionCliticSplitter.splitIfApplicable(
                         word: token.text,
                         inSentence: normalizedText,
                         wordRange: token.range,
-                        followedByQuestionMark: hasTrailingQuestionMark,
+                        questionContext: qContext,
                         enableJointDeasciify: enableJointDeasciify,
                         dictionary: dictionary,
                         gpaScorer: gpaScorer,
@@ -285,18 +314,93 @@ public struct SpellingEngine: Sendable {
         return true
     }
 
-    private func isImmediatelyFollowedByQuestionMark(after index: Int, in tokens: [Token]) -> Bool {
-        var cursor = index + 1
-        while cursor < tokens.count {
+    private func questionContext(at index: Int, in tokens: [Token]) -> QuestionCliticSplitter.QuestionContext {
+        let immediatelyFollowedByQuestionMark: Bool = {
+            var cursor = index + 1
+            while cursor < tokens.count {
+                let tok = tokens[cursor]
+                if tok.kind == .whitespace {
+                    if tok.text.contains(where: \.isNewline) {
+                        return false
+                    }
+                    cursor += 1
+                    continue
+                }
+                return tok.kind == .punctuation && tok.text == "?"
+            }
+            return false
+        }()
+
+        let clauseEndsWithQuestionMark: Bool = {
+            if immediatelyFollowedByQuestionMark {
+                return true
+            }
+            var cursor = index + 1
+            while cursor < tokens.count {
+                let tok = tokens[cursor]
+                if tok.kind == .whitespace, tok.text.contains(where: \.isNewline) {
+                    return false
+                }
+                if tok.kind == .punctuation, Self.sentenceEndingPunctuation.contains(tok.text) {
+                    if tok.text == "." && isAbbreviationPeriod(at: cursor, in: tokens) {
+                        cursor += 1
+                        continue
+                    }
+                    return tok.text == "?"
+                }
+                cursor += 1
+            }
+            return false
+        }()
+
+        guard clauseEndsWithQuestionMark else {
+            return QuestionCliticSplitter.QuestionContext(
+                immediatelyFollowedByQuestionMark: immediatelyFollowedByQuestionMark,
+                clauseEndsWithQuestionMark: false,
+                clauseHasOtherQuestionOperator: false
+            )
+        }
+
+        let clauseHasOtherQuestionOperator =
+            hasQuestionOperator(startingAt: index - 1, step: -1, in: tokens) ||
+            hasQuestionOperator(startingAt: index + 1, step: 1, in: tokens)
+
+        return QuestionCliticSplitter.QuestionContext(
+            immediatelyFollowedByQuestionMark: immediatelyFollowedByQuestionMark,
+            clauseEndsWithQuestionMark: true,
+            clauseHasOtherQuestionOperator: clauseHasOtherQuestionOperator
+        )
+    }
+
+    private func hasQuestionOperator(startingAt startIndex: Int, step: Int, in tokens: [Token]) -> Bool {
+        var cursor = startIndex
+        while cursor >= 0 && cursor < tokens.count {
             let tok = tokens[cursor]
-            if tok.kind == .whitespace {
+            switch tok.kind {
+            case .whitespace:
                 if tok.text.contains(where: \.isNewline) {
                     return false
                 }
-                cursor += 1
-                continue
+            case .punctuation:
+                if Self.clauseBoundaryPunctuation.contains(tok.text) {
+                    return false
+                }
+                if Self.sentenceEndingPunctuation.contains(tok.text),
+                   !(tok.text == "." && isAbbreviationPeriod(at: cursor, in: tokens)) {
+                    return false
+                }
+            case .word:
+                let lower = TurkishLocale.lowercased(tok.text)
+                if Self.clauseBoundaryConjunctions.contains(lower) {
+                    return false
+                }
+                if Self.standaloneQuestionOperators.contains(lower) {
+                    return true
+                }
+            case .apostropheWord, .protectedSpan:
+                break
             }
-            return tok.kind == .punctuation && tok.text == "?"
+            cursor += step
         }
         return false
     }

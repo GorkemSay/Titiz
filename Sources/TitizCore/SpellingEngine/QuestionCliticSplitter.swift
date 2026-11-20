@@ -77,6 +77,25 @@ public enum QuestionCliticSplitter {
         "eceğimi", "acağımı"
     ]
 
+    /// Sentence-local interrogative context passed by `SpellingEngine`.
+    public struct QuestionContext: Sendable {
+        public let immediatelyFollowedByQuestionMark: Bool
+        public let clauseEndsWithQuestionMark: Bool
+        public let clauseHasOtherQuestionOperator: Bool
+
+        public init(
+            immediatelyFollowedByQuestionMark: Bool = false,
+            clauseEndsWithQuestionMark: Bool = false,
+            clauseHasOtherQuestionOperator: Bool = false
+        ) {
+            self.immediatelyFollowedByQuestionMark = immediatelyFollowedByQuestionMark
+            self.clauseEndsWithQuestionMark = clauseEndsWithQuestionMark
+            self.clauseHasOtherQuestionOperator = clauseHasOtherQuestionOperator
+        }
+
+        public static let none = QuestionContext()
+    }
+
     /// Over-permissive Hunspell verbal truncations (`varm`, `yokm`) that accept invalid fused clitics.
     /// None of these are valid Turkish single words in TDK orthography.
     private static let knownOverpermissiveClitics: Set<String> = [
@@ -89,7 +108,7 @@ public enum QuestionCliticSplitter {
         word: String,
         inSentence sentence: String,
         wordRange: Range<String.Index>,
-        followedByQuestionMark: Bool = false,
+        questionContext: QuestionContext = .none,
         enableJointDeasciify: Bool,
         dictionary: HunspellDictionary,
         gpaScorer: GPAScorer,
@@ -119,16 +138,31 @@ public enum QuestionCliticSplitter {
 
         // Never split real Turkish whole words: when Hunspell accepts `nfc`, only split if:
         //  (a) it is a known over-permissive Hunspell verbal truncation (`varmı`, `varmi`, `yokmu`), OR
-        //  (b) the token is immediately followed by `?` and completely unseen in 8M clean corpus (`unigram <= -7.5`, catching `çıktımı ?`).
+        //  (b) the stem without final vowel isn't valid and the form is rare (`unigram <= -5.5`), OR
+        //  (c) the token is immediately followed by `?` and completely unseen (`unigram <= -7.5`, catching `çıktımı ?`), OR
+        //  (d) the local clause ends with `?` with no other question operator, both fused form and `-m` stem
+        //      are unseen (`<= -7.5`), AND the split bigram `(stem, clitic)` exists in `tr_freq.bin`.
+        var requiresCollocationEvidence = false
         let isHunspellValid = CandidateGenerator.isValidTurkishWord(nfc, dictionary: dictionary)
         if isHunspellValid && !Self.knownOverpermissiveClitics.contains(lowered) {
             let unigram = frequencyTable.unigramLog10(lowered)
             let stemWithoutFinalVowel = String(nfc.dropLast())
             let looksLikePossessiveMStem = CandidateGenerator.isValidTurkishWord(stemWithoutFinalVowel, dictionary: dictionary)
+            let possessiveStemUnigram = frequencyTable.unigramLog10(stemWithoutFinalVowel)
 
             let allowSplitForNonPossessive = !looksLikePossessiveMStem && unigram <= -5.5
-            let allowSplitForQuestionMarkedUnseen = followedByQuestionMark && unigram <= -7.5
-            guard allowSplitForNonPossessive || allowSplitForQuestionMarkedUnseen else {
+            let allowSplitForImmediateQuestionMark = questionContext.immediatelyFollowedByQuestionMark && unigram <= -7.5
+            let allowSplitForClauseQuestionGhostStem =
+                questionContext.clauseEndsWithQuestionMark &&
+                !questionContext.clauseHasOtherQuestionOperator &&
+                unigram <= -7.5 &&
+                possessiveStemUnigram <= -7.5
+
+            if allowSplitForNonPossessive || allowSplitForImmediateQuestionMark {
+                requiresCollocationEvidence = false
+            } else if allowSplitForClauseQuestionGhostStem {
+                requiresCollocationEvidence = true
+            } else {
                 return nil
             }
         }
@@ -163,15 +197,17 @@ public enum QuestionCliticSplitter {
 
             let rawStem = String(nfc.dropLast(suffixCharCount))
 
-            if CandidateGenerator.isValidTurkishWord(rawStem, dictionary: dictionary) {
-                guard let harmony = harmonyClass(for: rawStem) else { continue }
+            if CandidateGenerator.isValidTurkishWord(rawStem, dictionary: dictionary),
+               let harmony = harmonyClass(for: rawStem) {
                 let expectedClitic = cliticForm(for: template, harmony: harmony)
-                if !enableJointDeasciify && rawSuffix != expectedClitic {
-                    continue
+                let matchesExpectedOrthography = enableJointDeasciify || rawSuffix == expectedClitic
+                let hasCollocationSupport = !requiresCollocationEvidence ||
+                    frequencyTable.bigramConditionalLog10(previous: rawStem, current: expectedClitic) != nil
+                if matchesExpectedOrthography && hasCollocationSupport {
+                    let isJoint = rawSuffix != expectedClitic
+                    let ruleID = isJoint ? "spell.joint.question_clitic" : "spell.question_particle.separate"
+                    return ("\(rawStem) \(expectedClitic)", ruleID, isJoint)
                 }
-                let isJoint = rawSuffix != expectedClitic
-                let ruleID = isJoint ? "spell.joint.question_clitic" : "spell.question_particle.separate"
-                return ("\(rawStem) \(expectedClitic)", ruleID, isJoint)
             }
 
             guard enableJointDeasciify,
@@ -216,6 +252,10 @@ public enum QuestionCliticSplitter {
             }
 
             let harmonizedClitic = cliticForm(for: template, harmony: harmony)
+            if requiresCollocationEvidence &&
+                frequencyTable.bigramConditionalLog10(previous: restoredStem, current: harmonizedClitic) == nil {
+                continue
+            }
             return ("\(restoredStem) \(harmonizedClitic)", "spell.joint.question_clitic", true)
         }
 

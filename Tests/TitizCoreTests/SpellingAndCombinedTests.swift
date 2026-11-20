@@ -153,7 +153,12 @@ struct SpellingAndCombinedTests {
             "Yazıcıdan çıktımı aldım.",
             "Ne söylediğimi ve ne yaptığımı biliyorum.",
             "Kararımı ve arkadaşımı aradım.",
-            "Geleceğimi ve gördüğümü anlattım."
+            "Geleceğimi ve gördüğümü anlattım.",
+            "Benim doğrumu kimse değiştiremez.",
+            "Yazıcıdan çıktımı aldın mı?",
+            "Bu sorunumu nasıl çözerim?",
+            "Benim telefonumu gördün?",
+            "Benim bilgisayarımı gördün?"
         ]
         for sentence in preservedPossessives {
             let spellResult = Self.engine.correct(sentence, mode: .spelling)
@@ -163,6 +168,37 @@ struct SpellingAndCombinedTests {
             let combResult = Self.engine.correct(sentence, mode: .combined)
             #expect(combResult.correctedText == sentence)
         }
+
+        // Mid-sentence fused question clitics inside `?`-terminated clauses (even with Hunspell ghost `-m` stems)
+        let midSentenceQuestionCases: [(String, String)] = [
+            (
+                "Arkadasimla konustuktan sonra Intel islemci almaya karar verdim ama sence dogrumu yapiyorum?",
+                "Arkadaşımla konuştuktan sonra Intel işlemci almaya karar verdim ama sence doğru mu yapıyorum?"
+            ),
+            ("Sence iyimi oldu?", "Sence iyi mi oldu?"),
+            ("Bu kotumu gorunuyor?", "Bu kötü mü görünüyor?"),
+            ("Sence bu yeterlimi oldu?", "Sence bu yeterli mi oldu?"),
+            ("Bunu yenimi aldin?", "Bunu yeni mi aldın?"),
+            (
+                "Ne soyledigimi biliyorsun ama sence dogrumu yapiyorum?",
+                "Ne söylediğimi biliyorsun ama sence doğru mu yapıyorum?"
+            )
+        ]
+        for (input, expected) in midSentenceQuestionCases {
+            let combResult = Self.engine.correct(input, mode: .combined)
+            #expect(combResult.correctedText == expected)
+            verifyEditRanges(combResult)
+        }
+
+        let spellMidSentence = Self.engine.correct(
+            "Arkadaşımla konuştuktan sonra Intel işlemci almaya karar verdim ama sence doğrumu yapıyorum?",
+            mode: .spelling
+        )
+        #expect(
+            spellMidSentence.correctedText ==
+                "Arkadaşımla konuştuktan sonra Intel işlemci almaya karar verdim ama sence doğru mu yapıyorum?"
+        )
+        verifyEditRanges(spellMidSentence)
     }
 
     @Test("Exact UTF-16 Edit provenance ranges hold under NFD input across all modes")
