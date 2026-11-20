@@ -58,12 +58,13 @@ Titiz
 │   └── Models & Resources/   # Modeller, tr_TR.dic/aff, sözlük ve frekans tabloları
 ├── Sources/CHunspell         # Gömülü C/C++ Hunspell motoru ve C köprü başlığı
 ├── Sources/TitizEval         # Geliştirme ve kör test seti ölçüm/gecikme CLI aracı
-└── Tests/TitizCoreTests      # Birim ve regresyon test paketleri
+├── Tests/TitizCoreTests      # Birim ve regresyon test paketleri
+└── scripts/                  # Çevrimdışı varlık üretimi ve Titiz.app / .zip / .dmg paketleme betikleri
 ```
 
 ---
 
-## Derleme ve Geliştirme
+## Derleme, Geliştirme ve Paketleme
 
 Gereksinimler: macOS (Apple Silicon / Intel), Xcode ve Swift 6+. Harici Node.js veya Python çalışma zamanı son kullanıcılar için gerekmez.
 
@@ -77,12 +78,29 @@ swift build
 # Birim ve regresyon testlerini çalıştır
 swift test
 
-# Değerlendirme CLI aracını çalıştır
-swift run TitizEval
+# Değerlendirme CLI aracını çalıştır (Release + eşik doğrulaması)
+swift run -c release TitizEval --enforce-gates
 
 # Menü çubuğu uygulamasını geliştirme modunda başlat
 swift run TitizApp
+
+# Bağımsız Titiz.app, .zip ve .dmg dağıtım paketlerini oluştur (dist/ altında)
+./scripts/bundle-app.sh
 ```
+
+---
+
+## Ölçülen Kalite ve Gecikme Sonuçları (`TitizEval`)
+
+60 geliştirme/regresyon vakası (`Datasets/dev_cases.json`) üzerinde `Release` derleme sonuçları:
+
+| Ölçüt | Hedef | Ölçülen Sonuç |
+| --- | --- | --- |
+| Yanlış Pozitif Bozulma (Genel / Temiz Cümleler) | `<= %0,50` / `%0,00` | **`%0,00` (0/340)** / **`%0,00` (0/123)** |
+| Özel Ad ve Yabancı Terim Koruması | `>= %99,00` (`Tier 1/2A: %100`) | **`%100,00` (48/48)** |
+| Gerçek Hata Yakalama (`Bucket 1` / Genel) | `>= %92,00` / `>= %75,00` | **`%100,00` (70/70)** / **`%99,24` (131/132)** |
+| Düzeltme Kesinliği (*Edit Precision*) | `>= %95,00` | **`%100,00` (131/131)** |
+| Gecikme `p50 / p95` (273 krk. / 1.926 krk.) | `< 10 ms` / `< 25–80 ms` | **`0,626 / 0,678 ms`** · **`5,719 / 7,366 ms`** |
 
 ---
 
@@ -90,13 +108,13 @@ swift run TitizApp
 
 - `Package.swift` dosyası dağıtım hedefini `macOS(.v14)` olarak tanımlar. macOS 26 ve üzeri sistemlerde `#available(macOS 26.0, *)` ile yerel Apple Liquid Glass API'leri, macOS 14–15 sistemlerde ise `.ultraThinMaterial` / `.regularMaterial` uyumlu görsel katman kullanılır.
 - **Uyumluluk Notu:** macOS 14–15 çalışma zamanı uyumluluğu hedeflenmektedir; ancak doğrudan macOS 14 ve 15 ortamlarında doğrulanana kadar test edilmemiş kabul edilmelidir.
-- **Uygulama Simgesi:** Geliştirme sürecinde yer tutucu olarak sistem SF Symbol simgesi (`text.badge.checkmark`) kullanılmaktadır; nihai özel uygulama simgesi son aşamada tasarlanacaktır.
+- **Uygulama Simgesi:** Şu an yer tutucu olarak sistem SF Symbol simgesi (`text.badge.checkmark`) kullanılmaktadır; nihai özel uygulama simgesi ayrı bir tasarım aşamasında eklenecektir.
 
 ---
 
 ## macOS 15+ İmzasız Uygulama Açma (Gatekeeper)
 
-GitHub Releases üzerinden dağıtılan imzasız `Titiz.app` paketini ilk kez açarken macOS Gatekeeper güvenlik uyarısı gösterebilir:
+GitHub Releases üzerinden dağıtılan ad-hoc imzalı/imzasız `Titiz.app` paketini ilk kez açarken macOS Gatekeeper güvenlik uyarısı gösterebilir:
 
 1. `Titiz.app` dosyasını **Uygulamalar (`Applications`)** klasörüne taşıyın.
 2. Uygulamayı açmayı bir kez deneyin ve uyarı penceresini kapatın.
@@ -116,7 +134,7 @@ GitHub Releases üzerinden dağıtılan imzasız `Titiz.app` paketini ilk kez a�
 | Faz 4 | 4 katmanlı özel ad koruması ve Kişisel Sözlük | Tamamlandı |
 | Faz 5 | Yüksek hassasiyetli Yazım Motoru ve birleşik `Düzelt` modu | Tamamlandı |
 | Faz 6 | Yerel macOS Menü Çubuğu arayüzü (`TitizApp` — Liquid Glass) | Tamamlandı |
-| Faz 7 | Paketleme betiği (`Titiz.app`, `.zip`/`.dmg`) ve son kontroller | Planlandı |
+| Faz 7 | Paketleme betiği (`Titiz.app`, `.zip`/`.dmg`) ve son kontroller | Tamamlandı |
 
 ---
 

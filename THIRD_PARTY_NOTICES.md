@@ -2,9 +2,11 @@
 
 Titiz's own source code is licensed under the MIT License (see [LICENSE](LICENSE)).
 
+Titiz's own source code and rule metadata (`Sources/TitizCore/Resources/rules.json`) are licensed under the MIT License (see [LICENSE](LICENSE)).
+
 Titiz bundles and incorporates open-source software, linguistic dictionaries, decision-list models, wordlists, and entity/frequency tables so the application can run 100% offline and deterministically on macOS. Every embedded third-party component, its exact pinned revision, and its license are tracked below.
 
-## Embedded & Planned Component Inventory
+## Embedded Component Inventory
 
 | Component / Asset | Target / Path | Upstream Source | Pinned Version / Commit | License | Status |
 | --- | --- | --- | --- | --- | --- |

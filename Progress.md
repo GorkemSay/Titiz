@@ -63,9 +63,9 @@
 - [x] Launch and verify live on local Mac (light mode, dark mode, Reduce Transparency, keyboard shortcuts, persistence across restarts), update `Progress.md`, commit & push
 
 ### Phase 7 — Packaging, Release Script & Final Documentation Polish
-- [ ] Create `scripts/bundle-app.sh` producing self-contained `Titiz.app` (`LSUIElement = true`, all embedded dictionaries/tables/rules, optional ad-hoc `codesign --force --deep --sign -`) and `.zip`/`.dmg` release archive
-- [ ] Audit `THIRD_PARTY_NOTICES.md` and polish `README.md` (final architecture, benchmark results, build steps, Gatekeeper instructions, pending custom app icon note)
-- [ ] Verify fresh `Titiz.app` built from release script runs cleanly when launched directly, finalize `Progress.md`, commit & push
+- [x] Create `scripts/bundle-app.sh` producing self-contained `Titiz.app` (`LSUIElement = true`, all embedded dictionaries/tables/rules, optional ad-hoc `codesign --force --deep --sign -`) and `.zip`/`.dmg` release archive
+- [x] Audit `THIRD_PARTY_NOTICES.md` and polish `README.md` (final architecture, benchmark results, build steps, Gatekeeper instructions, pending custom app icon note)
+- [x] Verify fresh `Titiz.app` built from release script runs cleanly when launched directly, finalize `Progress.md`, commit & push
 
 ---
 
@@ -93,6 +93,7 @@
 | ADR-018 | 2026-11-20 | Track unified `(originalText, correctedText)` UTF-16 `Edit` ranges across `.combined` (`CharacterEngine` + `SpellingEngine`) by projecting through both `characterEdits` deltas and `NormalizedText` NFD->NFC boundaries and merging same-token rewrites. | Ensures exact, non-overlapping UTF-16 inline highlight ranges and independent per-edit revert even on NFD inputs and spaced punctuation. |
 | ADR-019 | 2026-11-20 | Build `TitizApp` around `NSStatusBar` + `NSPopover` (`MenuBarController`) with `NSApp.setActivationPolicy(.accessory)`, explicit Cocoa Edit menu (`NSApp.mainMenu`), and an AppKit `TitizNSTextView` editor instead of pure SwiftUI `MenuBarExtra(.window)`. | Eliminates `.accessory` keyboard focus loss on open, guarantees reliable `⌘V`/`⌘C`/`⌘A`/`⌘Z` shortcuts, and enables native `NSAttributedString` inline diff underlines with click-anchored detail popovers. |
 | ADR-020 | 2026-11-20 | Gate macOS 26+ Liquid Glass modifiers (`GlassEffectContainer`, `.glassEffect`) behind `#available(macOS 26.0, *)` + `!accessibilityReduceTransparency`, falling back to `.regularMaterial`/`.ultraThinMaterial` and opaque AppKit colors on Reduce Transparency or macOS 14–15. | Delivers authentic first-party Apple Liquid Glass craft while honoring macOS accessibility settings and keeping macOS 14–15 fallback clean. |
+| ADR-021 | 2026-11-20 | Package Release `Titiz.app` in `scripts/bundle-app.sh` with `LSUIElement = true`, `Titiz_TitizCore.bundle` under `Contents/Resources/` (matching SwiftPM `Bundle.module` lookup order), `plutil -lint`, ad-hoc `codesign --force --deep --sign -`, and reproducible `ditto` `.zip` + `hdiutil` `.dmg` archives into gitignored `dist/`. | Produces a self-contained drag-and-drop macOS menu bar bundle verified cleanly with `codesign --verify --deep --strict` and direct binary launch. |
 
 ---
 
@@ -212,3 +213,19 @@ Target gates (from `SPEC.md` Phase 2):
 - `swift run -c release TitizEval --enforce-gates` (Release, 60 dev cases) — Passed ALL gates (`exit 0`: FP `0.00% [0/340]`, Clean FP `0.00% [0/123]`, Retention `100.00% [48/48]`, Recall `99.24% [131/132]`, Precision `100.00% [131/131]`; Short `0.626 / 0.678 ms`, Long `5.719 / 7.366 ms`).
 - **Live Local Launch Check:** Launched built `TitizApp` binary on macOS host (`task-908`, `.accessory` status-bar mode, zero WindowServer/bundle stderr errors, stayed cleanly running until manually stopped). Interactive GUI pixel walkthrough across Light/Dark/Reduce Transparency awaits live user clicks if desired.
 - `SPEC.md` — Verified present and unmodified.
+
+## Phase 7 Verification Notes
+
+- **Packaging Script & Release Bundle (`scripts/bundle-app.sh`):**
+  - Ran `./scripts/bundle-app.sh` (version `0.1.0`, build `1`):
+    - Built Release `TitizApp`, copied executable and `Titiz_TitizCore.bundle` (`tr_TR.{dic,aff}`, `tr_freq.bin`, `gpa_patterns.json`, `en_common_tech.txt`, `tier2a/2b/3_entities.txt`, `rules.json`, metadata JSONs) into `dist/Titiz.app/Contents/Resources/`.
+    - Validated `Info.plist` (`LSUIElement = true`, `LSMinimumSystemVersion = 14.0`, `com.gorkemsay.Titiz`) via `plutil -lint`.
+    - Passed ad-hoc signature & strict verification (`codesign --force --deep --sign -` & `codesign --verify --deep --strict`).
+    - Packaged `dist/Titiz-0.1.0-macOS.zip` (`19M`, SHA-256: `0d048694955da1f5ff4f110a2f6d7018a58c0315bc51718164822022221d7947`) and `dist/Titiz-0.1.0-macOS.dmg` (`21M`, SHA-256: `0c353d073047304116e051e47a5fb1f93b816dd5bcb635dd6315c267a330ae09`).
+- **Direct Standalone `.app` Launch Check:**
+  - Launched `dist/Titiz.app/Contents/MacOS/TitizApp` directly (`task-974`); verified bundle resource loading and menu-bar status item startup with zero stderr errors and clean running state until stopped.
+- **Final Test & Documentation Audit:**
+  - `swift test` — Passed (`exit 0`, **50 / 50 tests** in 9 suites passed in 5.054 seconds; 0 failures).
+  - `THIRD_PARTY_NOTICES.md` — Audited against all embedded C/C++ sources and `Sources/TitizCore/Resources/` files; every license, version, and commit recorded cleanly.
+  - `README.md` — Finalized architecture diagram, `./scripts/bundle-app.sh` instructions, measured Release `TitizEval` table, macOS 14–15 runtime notice, SF Symbol placeholder note, Gatekeeper "Yine de Aç" instructions, and completed Phases 0–7 roadmap.
+  - `SPEC.md` — Verified present and unmodified.
