@@ -39,11 +39,13 @@ final class TitizAppState {
     var personalEntries: [PersonalDictionaryEntry] = []
     var historyEntries: [HistoryEntry] = []
     var statusNotice: String?
+    var updateState: AppUpdateState = .idle
 
     /// Original input text captured when the user ran "Düzelt" so adding a term to the
     /// Personal Dictionary immediately re-evaluates cleanly against the source input.
     private var sourceTextBeforeCorrection: String?
     private var copyFeedbackTask: Task<Void, Never>?
+    private var updateTask: Task<Void, Never>?
 
     init(
         engine: TitizEngine = TitizEngine(personalDictionaryStore: PersonalDictionaryStore.loadDefaultOrEmpty()),
@@ -287,13 +289,105 @@ final class TitizAppState {
         selectedUTF16Range = NSRange(location: 0, length: 0)
     }
 
+    /// Initiates a manual GitHub Releases check strictly on explicit user tap.
+    func checkForUpdates() {
+        switch updateState {
+        case .checking, .downloading, .installing:
+            return
+        case .idle, .upToDate, .available, .failed:
+            break
+        }
+
+        updateTask?.cancel()
+        updateState = .checking
+
+        updateTask = Task { [weak self] in
+            do {
+                let available = try await AppUpdater.fetchLatestUpdate()
+                guard !Task.isCancelled, let self else { return }
+                if let available {
+                    self.updateState = .available(available)
+                } else {
+                    self.updateState = .upToDate(currentVersion: AppUpdater.currentVersionString)
+                }
+            } catch is CancellationError {
+                return
+            } catch let error as AppUpdateError {
+                guard !Task.isCancelled, let self else { return }
+                self.updateState = .failed(error.errorDescription ?? "Güncelleme denetlenemedi.")
+            } catch {
+                guard !Task.isCancelled, let self else { return }
+                self.updateState = .failed("Güncelleme denetlenemedi: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Downloads, verifies, and installs `update`, or falls back to opening its GitHub Release page
+    /// when running inside a read-only mount or development SwiftPM build.
+    func installAvailableUpdate(_ update: AvailableUpdate) {
+        guard update.zipAssetURL != nil, AppUpdater.canSelfInstallFromCurrentBundle() else {
+            NSWorkspace.shared.open(update.releasePageURL)
+            updateState = .failed(
+                update.zipAssetURL == nil
+                    ? "Bu sürüm için otomatik kurulum paketi yok; sürüm sayfası tarayıcıda açıldı."
+                    : "Otomatik kurulum yalnızca yazılabilir bir Titiz.app paketinden çalışır; sürüm sayfası tarayıcıda açıldı."
+            )
+            return
+        }
+
+        updateTask?.cancel()
+        let versionLabel = update.version.description
+        updateState = .downloading(version: versionLabel, progress: 0.0)
+
+        updateTask = Task { [weak self] in
+            do {
+                let staged = try await AppUpdater.downloadAndStageUpdate(update) { [weak self] progress in
+                    guard let self, case .downloading = self.updateState else { return }
+                    self.updateState = .downloading(version: versionLabel, progress: progress)
+                }
+                guard !Task.isCancelled, let self else { return }
+                self.updateState = .installing(version: versionLabel)
+                try AppUpdater.replaceCurrentBundleAndRelaunch(
+                    stagedAppURL: staged.stagedAppURL,
+                    stagingDir: staged.stagingDir
+                )
+            } catch is CancellationError {
+                return
+            } catch let error as AppUpdateError {
+                guard !Task.isCancelled, let self else { return }
+                self.updateState = .failed(error.errorDescription ?? "Güncelleme kurulamadı.")
+            } catch {
+                guard !Task.isCancelled, let self else { return }
+                self.updateState = .failed("Güncelleme kurulamadı: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Resets non-active update states back to `.idle` when leaving Settings so returning
+    /// re-enables the interactive "Güncellemeleri Denetle" button immediately.
+    func resetUpdateCheckIfIdle() {
+        switch updateState {
+        case .downloading, .installing:
+            return
+        case .idle, .checking, .upToDate, .available, .failed:
+            updateTask?.cancel()
+            updateTask = nil
+            updateState = .idle
+        }
+    }
+
     func ruleMetadata(for ruleID: String) -> SpellingRuleMetadata? {
         if let direct = engine.resources.ruleCatalog.metadata(for: ruleID) {
             return direct
         }
-        // Combined edits may join two rule IDs (`char.bucket2+spell.capitalization.sentence_start`).
-        if let firstPart = ruleID.split(separator: "+").first {
-            return engine.resources.ruleCatalog.metadata(for: String(firstPart))
+        // Combined edits may join two rule IDs (`char.bucket1+spell.joint.question_clitic`);
+        // prefer the higher-level spelling/joint explanation when available.
+        let parts = ruleID.split(separator: "+").map(String.init)
+        if let primary = parts.last, let meta = engine.resources.ruleCatalog.metadata(for: primary) {
+            return meta
+        }
+        if let fallback = parts.first {
+            return engine.resources.ruleCatalog.metadata(for: fallback)
         }
         return nil
     }

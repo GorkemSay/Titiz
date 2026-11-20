@@ -93,8 +93,9 @@ public enum ProperNounProtector {
             }
 
             // Additional foreign-stem apostrophe protection (e.g. Docker'da, driver'a) when clearly English
-            // and not an ordinary Turkish word.
+            // and not an ASCII-typed Turkish diacritic proper noun (`Istanbul'dan`, `Izmir'de`).
             if isApostrophe,
+               !gazetteer.isASCIIFoldedTurkishEntity(stem),
                ForeignSuffixGuard.shouldPreserveSuffix(
                    for: result[index],
                    englishWordlist: englishWordlist,

@@ -156,8 +156,12 @@ struct EditDetailPopoverView: View {
         if let direct = ruleCatalog.metadata(for: ruleID) {
             return direct
         }
-        if let first = ruleID.split(separator: "+").first {
-            return ruleCatalog.metadata(for: String(first))
+        let parts = ruleID.split(separator: "+").map(String.init)
+        if let primary = parts.last, let meta = ruleCatalog.metadata(for: primary) {
+            return meta
+        }
+        if let fallback = parts.first {
+            return ruleCatalog.metadata(for: fallback)
         }
         return nil
     }

@@ -55,7 +55,7 @@
       "id": "spell.closed_tdk.lexicon",
       "name": "TDK Kesin Yazım Düzeltmeleri",
       "explanationTR": "Türk Dil Kurumu Yazım Kılavuzu'nda yazımı kesinleşmiş sık karıştırılan sözcük ve birleşimleri düzeltir.",
-      "tdkReferenceURL": "https://tdk.gov.tr/icerik/yazim-kurallari/baglac-olan-da-denin-yazilisi/",
+      "tdkReferenceURL": "https://tdk.gov.tr/icerik/yazim-kurallari/",
       "examples": [
         { "before": "herşey", "after": "her şey" },
         { "before": "herkez", "after": "herkes" },
@@ -111,6 +111,8 @@
     { "wrong": "birsey", "correct": "bir şey", "ruleID": "spell.joint.closed_tdk", "asciiVariantOnly": true },
     { "wrong": "hicbirsey", "correct": "hiçbir şey", "ruleID": "spell.joint.closed_tdk", "asciiVariantOnly": true },
     { "wrong": "hoscakal", "correct": "hoşça kal", "ruleID": "spell.joint.closed_tdk", "asciiVariantOnly": true },
-    { "wrong": "sagol", "correct": "sağ ol", "ruleID": "spell.joint.closed_tdk", "asciiVariantOnly": true }
+    { "wrong": "sagol", "correct": "sağ ol", "ruleID": "spell.joint.closed_tdk", "asciiVariantOnly": true },
+    { "wrong": "yanliz", "correct": "yalnız", "ruleID": "spell.joint.closed_tdk", "asciiVariantOnly": true },
+    { "wrong": "yalnis", "correct": "yanlış", "ruleID": "spell.joint.closed_tdk", "asciiVariantOnly": true }
   ]
 }

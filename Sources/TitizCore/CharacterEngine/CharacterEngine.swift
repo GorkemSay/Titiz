@@ -48,6 +48,7 @@ public struct CharacterEngine: Sendable {
     private let gpaScorer: GPAScorer
     private let englishWordlist: EnglishWordlist
     private let frequencyTable: TurkishFrequencyTable
+    private let asciiFoldedTurkishEntities: Set<String>
     private let config: CharacterEngineConfiguration
 
     public init(
@@ -55,12 +56,14 @@ public struct CharacterEngine: Sendable {
         gpaScorer: GPAScorer,
         englishWordlist: EnglishWordlist,
         frequencyTable: TurkishFrequencyTable,
+        asciiFoldedTurkishEntities: Set<String> = [],
         config: CharacterEngineConfiguration = .default
     ) {
         self.dictionary = dictionary
         self.gpaScorer = gpaScorer
         self.englishWordlist = englishWordlist
         self.frequencyTable = frequencyTable
+        self.asciiFoldedTurkishEntities = asciiFoldedTurkishEntities
         self.config = config
     }
 
@@ -131,8 +134,11 @@ public struct CharacterEngine: Sendable {
                 continue
             }
 
-            let collidesWithEnglish = englishWordlist.contains(stem)
+            let isASCIIFoldedTurkishEntity = asciiFoldedTurkishEntities.contains(stem)
+            let collidesWithEnglish = !isASCIIFoldedTurkishEntity && (
+                englishWordlist.contains(stem)
                 || englishWordlist.containsForeignStemWithTurkishSuffix(stem)
+            )
 
             // Bucket 1: original invalid, exactly 1 valid Turkish candidate, and not an English collision.
             if !genResult.originalIsValid && genResult.validAlternatives.count == 1 && !collidesWithEnglish {
@@ -190,8 +196,10 @@ public struct CharacterEngine: Sendable {
             guard let bestAlt = rankedAlternatives.first else { continue }
             let secondScore = rankedAlternatives.count > 1 ? rankedAlternatives[1].score : -Double.greatestFiniteMagnitude
 
-            let isEnglishWord = englishWordlist.contains(item.stem)
+            let isEnglishWord = !asciiFoldedTurkishEntities.contains(item.stem) && (
+                englishWordlist.contains(item.stem)
                 || englishWordlist.containsForeignStemWithTurkishSuffix(item.stem)
+            )
             var shouldApply = false
             var computedConfidence = 0.0
 

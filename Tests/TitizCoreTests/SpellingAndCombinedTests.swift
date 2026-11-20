@@ -199,6 +199,43 @@ struct SpellingAndCombinedTests {
                 "Arkadaşımla konuştuktan sonra Intel işlemci almaya karar verdim ama sence doğru mu yapıyorum?"
         )
         verifyEditRanges(spellMidSentence)
+
+        // Cross-layer audit regressions:
+        // 1) Merged apostrophe combined edit preserves full `original` (`turkiye'de`) for safe per-edit revert.
+        let apostropheCombined = Self.engine.correct(
+            "turkiye'de yazilim gelistirmek cok keyifli.",
+            mode: .combined
+        )
+        #expect(apostropheCombined.correctedText == "Türkiye'de yazılım geliştirmek çok keyifli.")
+        #expect(apostropheCombined.edits.first?.original == "turkiye'de")
+        #expect(apostropheCombined.edits.first?.replacement == "Türkiye'de")
+        verifyEditRanges(apostropheCombined)
+
+        // 2) ASCII closed TDK fixes (`yanliz`, `yalnis`) + 3) ASCII Turkish city proper nouns (`Istanbul`, `Izmir`)
+        //    vs foreign apostrophe protection (`Apple'da`, `Docker'dan`, `GitHub'ta`) + 4) short-stem `actim -> açtım`.
+        let auditCases: [(String, String)] = [
+            (
+                "bence herkez yanliz kalmaktan korkar ama bu yalnis bir dusunce.",
+                "Bence herkes yalnız kalmaktan korkar ama bu yanlış bir düşünce."
+            ),
+            (
+                "Istanbul'dan Ankara'ya ucakla gittim, Izmir'de toplantiya katildim.",
+                "İstanbul'dan Ankara'ya uçakla gittim, İzmir'de toplantıya katıldım."
+            ),
+            (
+                "Apple'da calisan arkadasim Docker'dan container acip GitHub'ta paylasti.",
+                "Apple'da çalışan arkadaşım Docker'dan container açıp GitHub'ta paylaştı."
+            ),
+            (
+                "GitHub uzerinden pull request actim, loglarini kontrol edip commitleri pushladim.",
+                "GitHub üzerinden pull request açtım, loglarini kontrol edip commitleri pushladim."
+            )
+        ]
+        for (input, expected) in auditCases {
+            let result = Self.engine.correct(input, mode: .combined)
+            #expect(result.correctedText == expected)
+            verifyEditRanges(result)
+        }
     }
 
     @Test("Exact UTF-16 Edit provenance ranges hold under NFD input across all modes")

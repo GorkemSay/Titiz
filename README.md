@@ -15,6 +15,7 @@
 - **%100 Çevrimdışı ve Gizlilik Odaklı:** Hesap yok, API anahtarı yok, telemetri yok, bulut çağrısı veya yapay zeka (LLM) servisi yok. Tüm metinler yalnızca kendi Mac'inizde işlenir.
 - **Hızlı Menü Çubuğu Akışı:** Menü çubuğundan açın, metni yapıştırın (`⌘V`), **"Düzelt"** (`⌘↩`) butonuna basın, isterseniz satır içi değişiklikleri inceleyin ve sonucu kopyalayın (`⌘⇧C`).
 - **Son 5 Geçmiş:** Son 5 düzeltme Mac'inizde yerel olarak saklanır ve dilediğiniz zaman tek tıkla yeniden kopyalanabilir.
+- **İsteğe Bağlı Manuel Güncelleme Denetimi:** Uygulama açılışta veya metin düzeltirken arka planda hiçbir ağ çağrısı yapmaz; yalnızca Ayarlar ekranındaki **"Güncellemeleri Denetle"** butonuna tıkladığınızda GitHub Releases üzerinden yeni sürüm kontrol edilir ve varsa tek tıkla yüklenir.
 
 ---
 

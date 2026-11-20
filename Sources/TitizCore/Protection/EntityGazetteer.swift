@@ -5,6 +5,9 @@ public struct EntityGazetteer: Sendable, Equatable {
     public let tier2A: Set<String>
     public let tier2B: Set<String>
     public let tier3Trie: MultiWordEntityTrie
+    /// ASCII-folded TitleCase forms of Turkish-diacritic Tier 2A proper nouns (e.g. `Istanbul` for `İstanbul`,
+    /// `Izmir` for `İzmir`, `Turkiye` for `Türkiye`) so they are restored rather than treated as English tokens.
+    public let asciiFoldedTurkishTier2A: Set<String>
 
     public init(
         tier2A: Set<String>,
@@ -14,6 +17,19 @@ public struct EntityGazetteer: Sendable, Equatable {
         self.tier2A = tier2A
         self.tier2B = tier2B
         self.tier3Trie = MultiWordEntityTrie(phrases: tier3Phrases, caseSensitive: true)
+        var foldedSet: Set<String> = []
+        for entry in tier2A {
+            let folded = TurkishLocale.asciiFolded(entry)
+            if folded != entry {
+                foldedSet.insert(folded)
+            }
+        }
+        self.asciiFoldedTurkishTier2A = foldedSet
+    }
+
+    /// Returns `true` when `stem` matches the exact ASCII-folded form of a diacritic-bearing Tier 2A entity.
+    public func isASCIIFoldedTurkishEntity(_ stem: String) -> Bool {
+        asciiFoldedTurkishTier2A.contains(stem)
     }
 
     /// Loads `tier2a_entities.txt`, `tier2b_entities.txt`, and `tier3_entities.txt` from `TitizCore` resources.

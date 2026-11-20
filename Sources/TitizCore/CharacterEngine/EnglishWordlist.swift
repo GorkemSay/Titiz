@@ -69,6 +69,9 @@ public struct EnglishWordlist: Sendable {
         for splitIdx in 3...maxStemLen {
             let suffix = String(chars[splitIdx...])
             guard Self.turkishInflectionalSuffixes.contains(suffix) else { continue }
+            // Avoid blocking common Turkish words on tiny 3-letter English stems + short 2-char endings
+            // (e.g., `act` + `im` blocking `actim -> açtım`), while still protecting `log + larini`, `bug + lar`.
+            guard splitIdx >= 4 || suffix.count >= 3 else { continue }
             let stem = String(chars[0..<splitIdx])
             if words.contains(stem) {
                 return true

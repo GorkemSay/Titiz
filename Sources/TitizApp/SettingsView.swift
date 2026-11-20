@@ -22,6 +22,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Button {
+                    state.resetUpdateCheckIfIdle()
                     state.subpanel = .editor
                 } label: {
                     Label("Düzenleyiciye Dön", systemImage: "chevron.left")
@@ -104,13 +105,17 @@ struct SettingsView: View {
                         }
                     }
                 }
-                .frame(maxHeight: 145)
+                .frame(maxHeight: 120)
             }
 
             Divider()
 
+            updatesSection
+
+            Divider()
+
             VStack(alignment: .leading, spacing: 4) {
-                Text("Titiz \(TitizEngine.version) · %100 Çevrimdışı")
+                Text("Titiz v\(AppUpdater.currentVersionString) · %100 Çevrimdışı")
                     .font(.caption.weight(.semibold))
 
                 Text("Motor: CHunspell \(TitizEngine.hunspellBridgeVersion) · Sözlük: tdd-ai/hunspell-tr (MPL-2.0) · GPA: Deniz Yüret (MIT) · Varlıklar: Wikidata (CC0 1.0) · Frekanslar: Leipzig Corpora (CC BY 4.0).")
@@ -118,6 +123,134 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+        }
+        .onDisappear {
+            state.resetUpdateCheckIfIdle()
+        }
+    }
+
+    @ViewBuilder
+    private var updatesSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Güncellemeler")
+                .font(.subheadline.weight(.semibold))
+
+            VStack(alignment: .leading, spacing: 8) {
+                switch state.updateState {
+                case .idle:
+                    HStack(spacing: 8) {
+                        Text("Mevcut sürüm: v\(AppUpdater.currentVersionString)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Spacer()
+
+                        Button("Güncellemeleri Denetle") {
+                            state.checkForUpdates()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(TitizBrandColors.burgundy)
+                        .controlSize(.small)
+                    }
+
+                case .checking:
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .controlSize(.small)
+
+                        Text("Güncellemeler denetleniyor...")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Spacer()
+                    }
+
+                case let .upToDate(current):
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.green)
+
+                        Text("Uygulama güncel (v\(current))")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.primary)
+
+                        Spacer()
+                    }
+
+                case let .available(update):
+                    HStack(spacing: 8) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Yeni sürüm mevcut: v\(update.version.description)")
+                                .font(.caption.weight(.semibold))
+
+                            Link("Sürüm Notları", destination: update.releasePageURL)
+                                .font(.caption2)
+                        }
+
+                        Spacer()
+
+                        Button("Yükle") {
+                            state.installAvailableUpdate(update)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(TitizBrandColors.burgundy)
+                        .controlSize(.small)
+                    }
+
+                case let .downloading(version, progress):
+                    VStack(alignment: .leading, spacing: 5) {
+                        HStack {
+                            Text("v\(version) indiriliyor...")
+                                .font(.caption.weight(.medium))
+                            Spacer()
+                            if let progress {
+                                Text("\(Int((progress * 100).rounded()))%")
+                                    .font(.caption2)
+                                    .monospacedDigit()
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        if let progress {
+                            ProgressView(value: progress, total: 1.0)
+                                .tint(TitizBrandColors.burgundy)
+                        } else {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                    }
+
+                case let .installing(version):
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .controlSize(.small)
+
+                        Text("v\(version) kuruluyor, Titiz yeniden başlatılacak...")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Spacer()
+                    }
+
+                case let .failed(message):
+                    HStack(spacing: 8) {
+                        Text(message)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Spacer(minLength: 6)
+
+                        Button("Tekrar Dene") {
+                            state.checkForUpdates()
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                }
+            }
+            .padding(10)
+            .titizSurfaceCard(cornerRadius: 10)
         }
     }
 

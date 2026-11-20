@@ -28,6 +28,7 @@ public struct TitizEngine: Sendable {
             gpaScorer: resources.gpaScorer,
             englishWordlist: resources.englishWordlist,
             frequencyTable: resources.frequencyTable,
+            asciiFoldedTurkishEntities: resources.gazetteer.asciiFoldedTurkishTier2A,
             config: characterConfig
         )
         self.spellingEngine = SpellingEngine(
@@ -208,16 +209,35 @@ public struct TitizEngine: Sendable {
 
         for (charIdx, charEdit) in characterEdits.enumerated() {
             if let spellEdit = overlappingPairs[charIdx] {
-                // Both stages touched the same token (e.g. `yarin` -> `yarın` -> `Yarın`): unify cleanly.
-                let prefixLen = spellEdit.originalRange.location - charEdit.correctedRange.location
-                let suffixStart = (charEdit.correctedRange.location + charEdit.correctedRange.length)
-                let spellEnd = spellEdit.originalRange.location + spellEdit.originalRange.length
-                let replacement: String
-                if prefixLen == 0 && spellEnd == suffixStart {
-                    replacement = spellEdit.replacement
+                // Both stages touched the same token (e.g. `yarin` -> `yarın` -> `Yarın`, or
+                // `turkiye'de` -> `türkiye'de` -> `Türkiye'de`). Reconstruct full original span when
+                // the spelling edit encompasses additional characters beyond `charEdit` (e.g. `'de`).
+                let cMidStart = charEdit.correctedRange.location
+                let cMidEnd = cMidStart + charEdit.correctedRange.length
+                let sMidStart = spellEdit.originalRange.location
+                let sMidEnd = sMidStart + spellEdit.originalRange.length
+
+                let resolvedOriginal: String
+                let resolvedOriginalRange: UTF16Range
+                if sMidStart == cMidStart && sMidEnd == cMidEnd {
+                    resolvedOriginal = charEdit.original
+                    resolvedOriginalRange = charEdit.originalRange
                 } else {
-                    replacement = spellEdit.replacement
+                    var charNormDeltaBefore = 0
+                    for priorCharEdit in characterEdits where priorCharEdit.correctedRange.upperBound <= sMidStart {
+                        charNormDeltaBefore += (priorCharEdit.correctedRange.length - priorCharEdit.original.utf16.count)
+                    }
+                    let overlapDelta = charEdit.correctedRange.length - charEdit.original.utf16.count
+                    let normOrigRange = UTF16Range(
+                        location: sMidStart - charNormDeltaBefore,
+                        length: max(0, spellEdit.originalRange.length - overlapDelta)
+                    )
+                    resolvedOriginalRange = normalized.originalUTF16Range(for: normOrigRange)
+                    let origNS = normalized.original as NSString
+                    let safeLen = min(resolvedOriginalRange.length, max(0, origNS.length - resolvedOriginalRange.location))
+                    resolvedOriginal = origNS.substring(with: NSRange(location: resolvedOriginalRange.location, length: safeLen))
                 }
+
                 merged.append(
                     Edit(
                         id: charEdit.id,
@@ -225,10 +245,10 @@ public struct TitizEngine: Sendable {
                         ruleID: "\(charEdit.ruleID)+\(spellEdit.ruleID)",
                         bucket: charEdit.bucket,
                         confidence: min(charEdit.confidence, spellEdit.confidence),
-                        original: charEdit.original,
-                        replacement: replacement,
+                        original: resolvedOriginal,
+                        replacement: spellEdit.replacement,
                         alternatives: charEdit.alternatives,
-                        originalRange: charEdit.originalRange,
+                        originalRange: resolvedOriginalRange,
                         correctedRange: spellEdit.correctedRange
                     )
                 )

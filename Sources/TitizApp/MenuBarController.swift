@@ -67,6 +67,10 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         focusEditor()
     }
 
+    func popoverDidClose(_ notification: Notification) {
+        state.resetUpdateCheckIfIdle()
+    }
+
     private func focusEditor() {
         NSApp.activate(ignoringOtherApps: true)
         DispatchQueue.main.async { [weak self] in
