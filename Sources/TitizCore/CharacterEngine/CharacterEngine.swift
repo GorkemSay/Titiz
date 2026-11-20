@@ -292,10 +292,15 @@ public struct CharacterEngine: Sendable {
                     )
                 )
             } else if let candidates = pendingSuggestions[index] {
+                let correctedSuggestionRange = UTF16Range(
+                    location: correctedUTF16Cursor,
+                    length: token.stemText.utf16.count
+                )
                 ambiguousSuggestions.append(
                     AmbiguousTokenSuggestion(
                         original: token.stemText,
                         originalRange: origStemRange,
+                        correctedRange: correctedSuggestionRange,
                         candidates: candidates
                     )
                 )

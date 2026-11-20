@@ -55,11 +55,18 @@ public struct Edit: Sendable, Equatable, Codable, Identifiable {
 public struct AmbiguousTokenSuggestion: Sendable, Equatable, Codable {
     public let original: String
     public let originalRange: UTF16Range
+    public let correctedRange: UTF16Range
     public let candidates: [String]
 
-    public init(original: String, originalRange: UTF16Range, candidates: [String]) {
+    public init(
+        original: String,
+        originalRange: UTF16Range,
+        correctedRange: UTF16Range? = nil,
+        candidates: [String]
+    ) {
         self.original = original
         self.originalRange = originalRange
+        self.correctedRange = correctedRange ?? originalRange
         self.candidates = candidates
     }
 }

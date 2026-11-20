@@ -63,12 +63,16 @@ public struct TitizEngine: Sendable {
             let charResult = characterEngine.process(analyzed)
             if charResult.edits.isEmpty {
                 let spellOnly = spellingEngine.process(analyzed, enableJointDeasciify: true)
+                let projectedSuggestions = projectSuggestions(
+                    charResult.ambiguousSuggestions,
+                    spellingEdits: spellOnly.edits
+                )
                 return CorrectionResult(
                     originalText: charResult.originalText,
                     correctedText: spellOnly.correctedText,
                     mode: .combined,
                     edits: spellOnly.edits,
-                    ambiguousSuggestions: charResult.ambiguousSuggestions
+                    ambiguousSuggestions: projectedSuggestions
                 )
             }
 
@@ -85,13 +89,17 @@ public struct TitizEngine: Sendable {
                 spellingEdits: spellResult.edits,
                 normalized: analyzed.normalized
             )
+            let projectedSuggestions = projectSuggestions(
+                charResult.ambiguousSuggestions,
+                spellingEdits: spellResult.edits
+            )
 
             return CorrectionResult(
                 originalText: charResult.originalText,
                 correctedText: spellResult.correctedText,
                 mode: .combined,
                 edits: mergedEdits,
-                ambiguousSuggestions: charResult.ambiguousSuggestions
+                ambiguousSuggestions: projectedSuggestions
             )
         }
     }
@@ -260,6 +268,47 @@ public struct TitizEngine: Sendable {
                 return lhs.originalRange.location < rhs.originalRange.location
             }
             return lhs.correctedRange.location < rhs.correctedRange.location
+        }
+    }
+
+    private func projectSuggestions(
+        _ suggestions: [AmbiguousTokenSuggestion],
+        spellingEdits: [Edit]
+    ) -> [AmbiguousTokenSuggestion] {
+        guard !suggestions.isEmpty, !spellingEdits.isEmpty else { return suggestions }
+
+        return suggestions.compactMap { suggestion in
+            let sStart = suggestion.correctedRange.location
+            let sEnd = sStart + suggestion.correctedRange.length
+
+            // Drop suggestion if a spelling rule rewrote that exact token (e.g. closed TDK split or capitalization).
+            let overlapped = spellingEdits.contains { spellEdit in
+                let mStart = spellEdit.originalRange.location
+                let mEnd = mStart + spellEdit.originalRange.length
+                return sStart < mEnd && mStart < sEnd
+            }
+            if overlapped {
+                return nil
+            }
+
+            var deltaBefore = 0
+            for spellEdit in spellingEdits {
+                let mEnd = spellEdit.originalRange.location + spellEdit.originalRange.length
+                if mEnd <= sStart {
+                    deltaBefore += (spellEdit.correctedRange.length - spellEdit.originalRange.length)
+                }
+            }
+
+            let projectedRange = UTF16Range(
+                location: sStart + deltaBefore,
+                length: suggestion.correctedRange.length
+            )
+            return AmbiguousTokenSuggestion(
+                original: suggestion.original,
+                originalRange: suggestion.originalRange,
+                correctedRange: projectedRange,
+                candidates: suggestion.candidates
+            )
         }
     }
 }
