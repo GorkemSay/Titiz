@@ -44,13 +44,13 @@ Metni baştan yazan veya internete gönderen üretken yapay zeka araçlarının 
 
 ## Çalışma Modları
 
-1. **`Karakter`:**
+1. **`Karakter` *(Varsayılan)*:**
    - Yalnızca ASCII harflerden (`c, g, i, o, s, u`) eksik Türkçe karakterleri (`ç, ğ, ı, İ, ö, ş, ü`) **tek yönlü** olarak tamamlar (`yarin disari cikacagim → yarın dışarı çıkacağım`).
    - Metinde zaten bulunan Türkçe karakterleri bozmaz; büyük/küçük harf, noktalama veya sözcük ayırma yapmaz.
 2. **`Yazım`:**
    - Yüksek güvenli TDK yazım ve noktalama kurallarını uygular: noktalama boşlukları (`? ! , . ; :`; URL, ondalık sayı, saat ve kısaltmalar korunarak), `tr_TR` cümle başı büyük harf, cümle ortası tümcecik bağlamı dahil `mi/mı/mu/mü` soru eki ayrımı (`sence doğrumu yapıyorum? → sence doğru mu yapıyorum?`, iyelik ekleri korunarak) ve kapalı küme kesin TDK düzeltmeleri (`herşey → her şey`, `birşey → bir şey`, `hiçbirşey → hiçbir şey`, `herkez → herkes`, `yanlız → yalnız`, `yalnış → yanlış`, `sağol → sağ ol`, `hoşçakal → hoşça kal`, `ardarda → art arda`).
    - *v1 Kapsam Sınırı:* Sözdizimsel/anlamsal `de/da`, `ki` ve `kar/kâr` ayrımları yanlış düzeltmeleri sıfırda tutmak için otomatik kapsam dışındadır.
-3. **`Çift Mod` *(Varsayılan)*:**
+3. **`Çift Mod`:**
    - `Karakter` ve `Yazım` motorlarını bir arada çalıştırır; ek olarak bitişik ASCII soru ekleri ve TDK bileşiklerinde tek adımda ayırma ve karakter onarımı uygular (`ciktimi → çıktı mı`, `kotumu gorunuyor? → kötü mü görünüyor?`, `hersey → her şey`).
 
 ---

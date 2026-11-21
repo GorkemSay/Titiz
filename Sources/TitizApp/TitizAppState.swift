@@ -25,7 +25,7 @@ final class TitizAppState {
     let historyStore: HistoryStore
 
     var text: String = ""
-    var selectedMode: CorrectionMode = .combined
+    var selectedMode: CorrectionMode = .character
     var subpanel: PopoverSubpanel = .editor
 
     var appliedEdits: [Edit] = []
