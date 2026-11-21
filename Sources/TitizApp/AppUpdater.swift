@@ -87,11 +87,11 @@ enum AppUpdater {
                 return trimmed
             }
         }
-        return "0.1.2"
+        return "1.0.0"
     }
 
     static var currentVersion: SemanticVersion {
-        SemanticVersion(parsing: currentVersionString) ?? SemanticVersion(major: 0, minor: 1, patch: 2)
+        SemanticVersion(parsing: currentVersionString) ?? SemanticVersion(major: 1, minor: 0, patch: 0)
     }
 
     static func canSelfInstallFromCurrentBundle() -> Bool {
