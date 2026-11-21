@@ -121,7 +121,15 @@ struct SpellingAndCombinedTests {
             ("Guncelleme sorunsuz olmusmu?", "Güncelleme sorunsuz olmuş mu?"),
             ("Bence hersey hazir ama birsey daha var.", "Bence her şey hazır ama bir şey daha var."),
             ("Bugun disari cikacakmisin?", "Bugün dışarı çıkacak mısın?"),
-            ("istanbul'da yasayan arkadasim icin guzel bir hediye aldim.", "İstanbul'da yaşayan arkadaşım için güzel bir hediye aldım.")
+            ("istanbul'da yasayan arkadasim icin guzel bir hediye aldim.", "İstanbul'da yaşayan arkadaşım için güzel bir hediye aldım."),
+            (
+                "League of Legends oynarken degisiklikleri takip ediyormusun?",
+                "League of Legends oynarken değişiklikleri takip ediyor musun?"
+            ),
+            (
+                "Oppenheimer filmini okudunmu yoksa henuz baslamadinmi?",
+                "Oppenheimer filmini okudun mu yoksa henüz başlamadın mı?"
+            )
         ]
 
         for (input, expected) in jointCases {
@@ -140,6 +148,10 @@ struct SpellingAndCombinedTests {
         let wholeWords = Self.engine.correct("uretimi ve cozumu ile bolumu gelistirdik.", mode: .combined)
         #expect(wholeWords.correctedText == "Üretimi ve çözümü ile bölümü geliştirdik.")
         verifyEditRanges(wholeWords)
+
+        let asciiPossessives = Self.engine.correct("Oyunumu, filmimi ve toplantimi yarina erteledim.", mode: .combined)
+        #expect(asciiPossessives.correctedText == "Oyunumu, filmimi ve toplantımı yarına erteledim.")
+        verifyEditRanges(asciiPossessives)
 
         // Participle & 1st-person possessive+accusative forms (-diğimi/-tığımı/-ımı) must NEVER split as question clitics
         let userReportedInput = "Arkadaslarimla konusurken Intel islemci almaya karar verdigimi soyledim ama emin olamadim."

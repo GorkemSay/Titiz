@@ -168,14 +168,24 @@ public enum QuestionCliticSplitter {
         }
 
         if enableJointDeasciify && !isHunspellValid {
-            // Protect unsplit ASCII Turkish words missing diacritics (e.g. `uretimi` -> `üretimi`, `cozumu` -> `çözümü`).
+            // Protect unsplit ASCII Turkish words and possessives (e.g. `uretimi` -> `üretimi`, `cozumu` -> `çözümü`),
+            // while letting unseen over-permissive Hunspell fused forms (e.g. `baslamadinmi`, `ediyormusun`) reach splitting.
             let unsplitPredictions = gpaScorer.predictions(for: nfc, inSentence: sentence, wordRange: wordRange)
             let unsplitCandidates = CandidateGenerator.generate(
                 for: nfc,
                 gpaPredictions: unsplitPredictions,
                 dictionary: dictionary
             )
-            if unsplitCandidates.originalIsValid || !unsplitCandidates.validAlternatives.isEmpty {
+            let hasRealUnsplitAlternative = unsplitCandidates.validAlternatives.contains { alt in
+                let loweredAlt = TurkishLocale.lowercased(alt)
+                if frequencyTable.unigramLog10(loweredAlt) > -7.5 {
+                    return true
+                }
+                let stemWithoutFinalVowel = String(loweredAlt.dropLast())
+                return !stemWithoutFinalVowel.isEmpty &&
+                    CandidateGenerator.isValidTurkishWord(stemWithoutFinalVowel, dictionary: dictionary)
+            }
+            if unsplitCandidates.originalIsValid || hasRealUnsplitAlternative {
                 return nil
             }
         }
@@ -230,16 +240,22 @@ public enum QuestionCliticSplitter {
             if stemResult.validAlternatives.count == 1 {
                 chosenStem = stemResult.validAlternatives[0]
             } else {
-                let scored = stemResult.validAlternatives.map { cand -> (candidate: String, score: Double) in
+                let scored = stemResult.validAlternatives.map { cand -> (candidate: String, uni: Double, score: Double) in
                     let uni = frequencyTable.unigramLog10(cand)
                     let gpa = gpaScorer.agreementScore(candidate: cand, original: rawStem, predictions: stemPredictions)
-                    return (cand, uni + 1.10 * gpa)
+                    return (cand, uni, uni + 1.10 * gpa)
                 }.sorted { lhs, rhs in
                     if lhs.score != rhs.score { return lhs.score > rhs.score }
                     return lhs.candidate < rhs.candidate
                 }
 
                 if scored.count >= 2 && (scored[0].score - scored[1].score) >= 0.45 {
+                    chosenStem = scored[0].candidate
+                } else if scored.count >= 2,
+                          scored[0].uni <= -7.5,
+                          scored[1].uni <= -7.5,
+                          scored[0].score > scored[1].score,
+                          scored[0].candidate == gpaScorer.oneWayPredictedWord(for: rawStem, inSentence: sentence, wordRange: stemRange) {
                     chosenStem = scored[0].candidate
                 } else {
                     chosenStem = nil

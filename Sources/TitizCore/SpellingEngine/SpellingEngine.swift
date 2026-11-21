@@ -122,6 +122,35 @@ public struct SpellingEngine: Sendable {
                         let resolvedRuleID = priorCharEdit != nil ? "spell.joint.question_clitic" : cliticSplit.ruleID
                         wordReplacements[index] = (rendered, resolvedRuleID, 0.96)
                         continue
+                    } else if enableJointDeasciify,
+                              let priorCharEdit,
+                              frequencyTable.unigramLog10(TurkishLocale.lowercased(token.text)) <= -7.5 {
+                        var revertedSentence = normalizedText
+                        let prefixLength = normalizedText.distance(from: normalizedText.startIndex, to: token.range.lowerBound)
+                        revertedSentence.replaceSubrange(token.range, with: priorCharEdit.original)
+                        let revertedStart = revertedSentence.index(revertedSentence.startIndex, offsetBy: prefixLength)
+                        let revertedEnd = revertedSentence.index(revertedStart, offsetBy: priorCharEdit.original.count)
+                        let revertedRange = revertedStart..<revertedEnd
+
+                        if let rescuedSplit = QuestionCliticSplitter.splitIfApplicable(
+                            word: priorCharEdit.original,
+                            inSentence: revertedSentence,
+                            wordRange: revertedRange,
+                            questionContext: qContext,
+                            enableJointDeasciify: true,
+                            dictionary: dictionary,
+                            gpaScorer: gpaScorer,
+                            englishWordlist: englishWordlist,
+                            frequencyTable: frequencyTable
+                        ) {
+                            let rendered = applySentenceStartIfNeeded(
+                                rescuedSplit.replacement,
+                                at: index,
+                                in: tokens
+                            )
+                            wordReplacements[index] = (rendered, "spell.joint.question_clitic", 0.96)
+                            continue
+                        }
                     }
                 }
 
