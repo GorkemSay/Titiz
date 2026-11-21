@@ -3,8 +3,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_DIR="${ROOT_DIR}/dist"
-VERSION="0.1.0"
-BUILD_NUMBER="1"
+VERSION="0.1.1"
+BUILD_NUMBER="2"
 BUNDLE_ID="com.gorkemsay.Titiz"
 SKIP_BUILD=false
 RUN_CODESIGN=true
@@ -16,8 +16,8 @@ usage() {
 Usage: scripts/bundle-app.sh [options]
 
 Options:
-  --version <ver>    Bundle marketing version (default: 0.1.0)
-  --build <num>      Bundle build number (default: 1)
+  --version <ver>    Bundle marketing version (default: 0.1.1)
+  --build <num>      Bundle build number (default: 2)
   --skip-build       Skip `swift build -c release --product TitizApp`
   --no-codesign      Skip ad-hoc `codesign --force --deep --sign -`
   --no-zip           Skip .zip archive creation

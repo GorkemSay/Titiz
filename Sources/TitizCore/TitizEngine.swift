@@ -3,8 +3,8 @@ import Foundation
 
 /// Pure Swift, deterministic Turkish proofreading engine.
 public struct TitizEngine: Sendable {
-    /// Semantic development version of the TitizCore engine.
-    public static let version = "0.1.0-dev"
+    /// Semantic version of the TitizCore engine.
+    public static let version = "0.1.1"
 
     /// Version string exposed by the underlying `CHunspell` bridge.
     public static var hunspellBridgeVersion: String {

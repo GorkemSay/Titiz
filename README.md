@@ -71,11 +71,12 @@ Metni baştan yazan veya internete gönderen üretken yapay zeka araçlarının 
 
 ## Kurulum ve İlk Açılış (Gatekeeper)
 
-GitHub Releases üzerinden indirdiğiniz `Titiz.app` paketini açarken macOS Gatekeeper ad-hoc imza uyarısı gösterebilir:
+Ad-hoc imzalı uygulamalar ilk açılışta macOS Gatekeeper uyarısı gösterebilir:
 
-1. `Titiz.app` uygulamasını **Uygulamalar (`Applications`)** klasörüne sürükleyin.
-2. Uygulamayı bir kez açmayı deneyip uyarı penceresini kapatın.
-3. **Sistem Ayarları → Gizlilik ve Güvenlik** ekranının altındaki **"Yine de Aç"** düğmesiyle onaylayın.
+1. [GitHub Releases](https://github.com/GorkemSay/Titiz/releases/latest) sayfasından güncel `Titiz-*-macOS.dmg` (veya `.zip`) paketini indirin.
+2. Açılan paket içindeki `Titiz.app` uygulamasını **Uygulamalar (`Applications`)** klasörüne sürükleyin.
+3. Uygulamayı bir kez açmayı deneyip Gatekeeper uyarı penceresini kapatın.
+4. **Sistem Ayarları → Gizlilik ve Güvenlik** ekranının altındaki **"Yine de Aç"** düğmesiyle onaylayın.
 
 > **macOS Sürüm Uyumluluğu:** `Package.swift` hedefi `macOS(.v14)` olarak tanımlıdır. macOS 26 ve üzerinde yerel Liquid Glass API'leri, macOS 14–15 sistemlerde `.ultraThinMaterial` / `.regularMaterial` uyumlu görsel katman kullanılır. (macOS 14–15 ortamları için çalışma zamanı uyumluluğu hedeflense de doğrudan o sürümlerde test edilene kadar doğrulanmamış kabul edilmelidir.)
 
