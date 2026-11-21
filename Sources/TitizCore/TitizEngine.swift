@@ -4,7 +4,7 @@ import Foundation
 /// Pure Swift, deterministic Turkish proofreading engine.
 public struct TitizEngine: Sendable {
     /// Semantic version of the TitizCore engine.
-    public static let version = "0.1.1"
+    public static let version = "0.1.2"
 
     /// Version string exposed by the underlying `CHunspell` bridge.
     public static var hunspellBridgeVersion: String {
