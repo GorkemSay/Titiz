@@ -267,7 +267,7 @@ struct MainPopoverView: View {
                 Button {
                     state.runCorrection()
                 } label: {
-                    Text(primaryButtonTitle)
+                    Text("Düzelt")
                         .font(.subheadline.weight(.semibold))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)
@@ -275,15 +275,16 @@ struct MainPopoverView: View {
                 .buttonStyle(TitizPrimaryButtonStyle())
                 .disabled(state.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 .keyboardShortcut(.return, modifiers: .command)
+                .help(primaryButtonHelp)
             }
         }
     }
 
-    private var primaryButtonTitle: String {
+    private var primaryButtonHelp: String {
         switch state.selectedMode {
-        case .combined: return "Düzelt"
-        case .character: return "Karakterleri Düzelt"
-        case .spelling: return "Yazımı Düzelt"
+        case .combined: return "Düzelt (⌘↩)"
+        case .character: return "Karakterleri Düzelt (⌘↩)"
+        case .spelling: return "Yazımı Düzelt (⌘↩)"
         }
     }
 
