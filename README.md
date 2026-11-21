@@ -65,7 +65,7 @@ Metni baştan yazan veya internete gönderen üretken yapay zeka araçlarının 
 | Özel Ad ve Yabancı Terim Koruması | `>= %99,00` (`Tier 1/2A: %100`) | **`%100,00` (48/48)** |
 | Gerçek Hata Yakalama (`Bucket 1` / Genel) | `>= %92,00` / `>= %75,00` | **`%100,00` (70/70)** / **`%99,24` (131/132)** |
 | Düzeltme Kesinliği (*Edit Precision*) | `>= %95,00` | **`%100,00` (131/131)** |
-| Gecikme `p50 / p95` (273 krk. / 1.926 krk.) | `< 10 ms` / `< 25–80 ms` | **`0,702 / 0,847 ms`** · **`6,869 / 7,426 ms`** |
+| Gecikme `p50 / p95` (273 krk. / 1.926 krk.) | `< 10 ms` / `< 25 ms` (kısa), `< 80 ms` (uzun) | **`0,702 / 0,847 ms`** · **`6,869 / 7,426 ms`** |
 
 ---
 
